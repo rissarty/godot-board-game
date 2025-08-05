@@ -1,45 +1,43 @@
 extends Node2D
 
-
 @onready var tilemap = $TileMap
 @onready var player_piece = $player1spriteGreen
 @onready var rollresult = $rollresult
+
+var tile_map = {} # to be filled with tiles 1 to 100
+
 var current_tile = 1
 
-func get_tile_position(tile_num: int) -> Vector2i:
-	var index := tile_num - 1
-	@warning_ignore("integer_division")
-	var row := index // 10
-	var col := index % 10
-	if row % 2 == 1:
-		col = 9 - col
-	return Vector2i(col, 9 - row)  # Adjust for top-down tilemap
+func _ready():
+	generate_tile_map()
+	player_piece.position = tile_map[current_tile]
 
-func move_piece_to_tile(tile_num: int):
-	var board_pos: Vector2i = get_tile_position(tile_num)      # e.g., (0, 9)
-	var tile_per_square = 6                                     # 6x6 tiles per square
-	var tile_offset: Vector2i = board_pos * tile_per_square     # scale to full board
-	var center_tile: Vector2i = tile_offset + Vector2i(3, 3)     # center of 6x6
-
-	var cell_pos: Vector2 = tilemap.map_to_local(center_tile)   # convert to local
-	var global_pos: Vector2 = tilemap.to_global(cell_pos)       # convert to global
-
-	player_piece.global_position = global_pos                   # move piece
-
-	print("Moving to tile", tile_num, " -> tile grid:", center_tile, " -> pos:", player_piece.global_position)
-
-
-
+# Roll dice
 func _on_dicerollbutton_pressed():
 	var dice_roll = randi() % 6 + 1
-	$rollresult.text = "u got" + str(dice_roll)
+	rollresult.text = "You got " + str(dice_roll)
+
 	var target_tile = current_tile + dice_roll
 	if target_tile > 100:
 		target_tile = 100
-	
-	# Move one tile at a time with delay
+
 	for i in range(current_tile + 1, target_tile + 1):
-		move_piece_to_tile(i)
+		player_piece.position = tile_map[i]
 		await get_tree().create_timer(0.3).timeout
 
 	current_tile = target_tile
+
+# Generate S-pattern tile_map with origin (336, 592)
+func generate_tile_map():
+	var start_x = 336
+	var start_y = 592
+	var tile_size = 32
+	var tile_num = 1
+
+	for row in range(10):
+		var y = start_y - (row * tile_size)
+		for col in range(10):
+			var x = start_x + (col * tile_size)
+			var real_col = col if row % 2 == 0 else 9 - col
+			tile_map[tile_num] = Vector2(start_x + (real_col * tile_size), y)
+			tile_num += 1
