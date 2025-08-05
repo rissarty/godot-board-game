@@ -12,6 +12,12 @@ func _ready():
 	generate_tile_map()
 	player_piece.position = tile_map[current_tile]
 
+var snakes = {
+	20: 5,
+	43: 17,
+	87: 24
+}
+
 # Roll dice
 func _on_dicerollbutton_pressed():
 	var dice_roll = randi() % 6 + 1
@@ -21,11 +27,19 @@ func _on_dicerollbutton_pressed():
 	if target_tile > 100:
 		target_tile = 100
 
+	# Move one step at a time
 	for i in range(current_tile + 1, target_tile + 1):
 		player_piece.position = tile_map[i]
 		await get_tree().create_timer(0.3).timeout
 
 	current_tile = target_tile
+
+	# 🐍 Check for snake at current_tile
+	if current_tile in snakes:
+		await get_tree().create_timer(0.5).timeout # Small pause before snake triggers
+		current_tile = snakes[current_tile]
+		player_piece.position = tile_map[current_tile]
+
 
 # Generate S-pattern tile_map with origin (336, 592)
 func generate_tile_map():
