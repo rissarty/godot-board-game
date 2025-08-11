@@ -1636,7 +1636,7 @@ scale = Vector2(0.309574, 0.282585)
 texture = ExtResource("3_dgayj")
 
 [node name="playerRED" type="Sprite2D" parent="."]
-position = Vector2(352, 608)
+position = Vector2(352, 616)
 scale = Vector2(0.310627, 0.279361)
 texture = ExtResource("4_801q5")
 
@@ -1660,4 +1660,26 @@ offset_right = 1088.0
 offset_bottom = 384.0
 grow_horizontal = 2
 
+[node name="showpowercardsbutton" type="Button" parent="."]
+offset_left = 1024.0
+offset_top = 448.0
+offset_right = 1088.0
+offset_bottom = 512.0
+text = "show hand"
+metadata/_edit_use_anchors_ = true
+
+[node name="HandPanel" type="Panel" parent="."]
+offset_left = 160.0
+offset_top = 448.0
+offset_right = 992.0
+offset_bottom = 640.0
+
+[node name="cardhancontainer" type="HBoxContainer" parent="HandPanel"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 816.0
+offset_bottom = 176.0
+
 [connection signal="pressed" from="dicerollbutton" to="." method="_on_dicerollbutton_pressed"]
+[connection signal="pressed" from="showpowercardsbutton" to="." method="_on_showpowercardsbutton_pressed"]
