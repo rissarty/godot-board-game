@@ -3,6 +3,10 @@ extends Node2D
 @onready var tilemap = $TileMap
 @onready var rollresult = $rollresult
 @onready var hand_container = $HandPanel/cardhancontainer
+@onready var handpanel = $HandPanel
+@onready var hand_button = $showpowercardsbutton
+@onready var shoppanel = $Shoppanel
+@onready var Shopcontainer1 = $Shoppanel/Shopcontainer1
 @onready var card_scene = preload("res://Cards.tscn") # Path to your PowerCard scene
 
 var tile_map = {}
@@ -12,7 +16,6 @@ var turn_order = ["R", "G", "B", "Y"]
 var current_turn_index = 0
 var current_tile = 1
 var has_rolled_dice = false
-
 var snakes = { 20: 5, 43: 17, 87: 24 }
 var ladders = { 3: 22, 8: 30, 28: 84 }
 var offset = {
@@ -131,3 +134,10 @@ func get_offset_if_needed(tile_number, color):
 	if tile_number == 1:
 		return Vector2.ZERO
 	return offset[color]
+
+
+func _on_showpowercardsbutton_pressed():
+	hand_container.visible = !hand_container.visible
+	handpanel.visible = !handpanel.visible
+func _on_showshopbutton_pressed():
+	shoppanel.visible = !shoppanel.visible

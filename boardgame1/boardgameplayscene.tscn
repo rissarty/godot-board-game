@@ -1661,15 +1661,22 @@ offset_bottom = 384.0
 grow_horizontal = 2
 
 [node name="showpowercardsbutton" type="Button" parent="."]
-offset_left = 1024.0
-offset_top = 448.0
-offset_right = 1088.0
-offset_bottom = 512.0
+offset_left = 1032.0
+offset_top = 472.0
+offset_right = 1125.0
+offset_bottom = 536.0
 text = "show hand"
 metadata/_edit_use_anchors_ = true
 
+[node name="Showshopbutton" type="Button" parent="."]
+offset_left = 1056.0
+offset_top = 408.0
+offset_right = 1120.0
+offset_bottom = 448.0
+
 [node name="HandPanel" type="Panel" parent="."]
-offset_left = 160.0
+visible = false
+offset_left = 512.0
 offset_top = 448.0
 offset_right = 992.0
 offset_bottom = 640.0
@@ -1678,8 +1685,23 @@ offset_bottom = 640.0
 layout_mode = 0
 offset_left = 16.0
 offset_top = 16.0
-offset_right = 816.0
+offset_right = 472.0
 offset_bottom = 176.0
+theme_override_constants/separation = 20
+
+[node name="Shoppanel" type="Panel" parent="."]
+visible = false
+offset_left = 272.0
+offset_top = 88.0
+offset_right = 944.0
+offset_bottom = 544.0
+metadata/_edit_use_anchors_ = true
+
+[node name="Shopcontainer1" type="HBoxContainer" parent="Shoppanel"]
+layout_mode = 0
+offset_right = 672.0
+offset_bottom = 384.0
 
 [connection signal="pressed" from="dicerollbutton" to="." method="_on_dicerollbutton_pressed"]
 [connection signal="pressed" from="showpowercardsbutton" to="." method="_on_showpowercardsbutton_pressed"]
+[connection signal="pressed" from="Showshopbutton" to="." method="_on_showshopbutton_pressed"]
