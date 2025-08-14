@@ -5,7 +5,8 @@ var card_name: String = ""
 var move_value: int = 0
 var shop_cost: int = 0
 var effect_description: String = ""
-
+var card_mode: String = "hand" # "hand" or "shop"
+var buy_callback: Callable = Callable() # Optional function to call when bought
 @onready var card_button = $CardButton
 @onready var name_label = $CardButton/NameLabel
 @onready var cost_label = $CardButton/CostLabel
@@ -107,11 +108,18 @@ func _update_enabled_state() -> void:
 	if card_button:
 		card_button.disabled = not enabled
 		modulate = Color(1,1,1,1) if enabled else Color(0.6,0.6,0.6,1)
-
+func set_card_mode(mode: String, callback: Callable = Callable()):
+	card_mode = mode
+	buy_callback = callback
+	_update_enabled_state()
 # -----------------------
 # Input / interactions
 # -----------------------
 func _on_card_pressed() -> void:
+	if card_mode == "shop":
+		if buy_callback.is_valid():
+			buy_callback.call(get_card_data())
+		return
 	if not is_player_turn:
 		print("⛔ Not your turn!")
 		return

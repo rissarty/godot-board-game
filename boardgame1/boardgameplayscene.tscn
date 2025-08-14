@@ -1700,7 +1700,7 @@ metadata/_edit_use_anchors_ = true
 [node name="Shopcontainer1" type="HBoxContainer" parent="Shoppanel"]
 layout_mode = 0
 offset_right = 672.0
-offset_bottom = 384.0
+offset_bottom = 144.0
 
 [connection signal="pressed" from="dicerollbutton" to="." method="_on_dicerollbutton_pressed"]
 [connection signal="pressed" from="showpowercardsbutton" to="." method="_on_showpowercardsbutton_pressed"]
