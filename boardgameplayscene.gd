@@ -1,6 +1,7 @@
 extends Node2D
 
 # === NODES / SCENES ===
+#region ONREADIES/EXPORTS/NODES
 @onready var tilemap            = $TileMap
 @onready var tilemaplayer       = $TileMap/Tilemaplayerresized
 @onready var rollresult         = $rollresult
@@ -39,43 +40,38 @@ extends Node2D
 @export var menu_scene_path: String = "res://scenes/menusscene.tscn"  # change to your menu scene path if different
 @export var auto_return_seconds: float = 3.0
 @export var debug_font: Font  # assign a DynamicFont or TTF in the inspector
-var show_tile_debug := false
-var game_over: bool = false
-# Debug log UI (create a Label node named "DebugLog" in your scene)
-func log_debug(msg: String) -> void:
-	if debug_log != null:
-		# append line
-		debug_log.text += msg + "\n"
-		# keep only last 20 lines so it doesn't grow forever
-		var lines := debug_log.text.split("\n")
-		if lines.size() > 20:
-			debug_log.text = "\n".join(lines.slice(lines.size() - 20, lines.size()))
-	else:
-		# fallback to console if label missing
-		print("[DEBUG] " + msg)
-var blocked_tiles: Array[int] = []
-# optional AI manager preload (unused by default)
-const AIManagerClass := preload("res://Gds folder/ai_managerscene.gd")
-var ai_manager: Node = null
-var player_effects: Dictionary = {}
-var world_pos: Vector2 = Vector2.ZERO
+#endregion
+"""===========================================MONEY VARS GLOBAL========================================================="""
+#region MONEY VARS GLOBAL
 var money_nodes_by_tile : Dictionary = {}       # maps tile_num -> Sprite2D node
 var money_value : int = 5                      # how much each coin gives
 var money_tiles_positions: Array[int] = []  # Track money tile numbers
 const MONEY_SOURCE_ID = 0
 const MONEY_ATLAS_COORD = Vector2i(2,0)
-var swap_source_player: String = ""
-var swap_target_delegate: String = ""  # NEW
-# ---------- AI setup state ----------
+const MONEY_TILE_ID = 5
+var player_money = {"R":10,"G":10,"B":10,"Y":10}
+#endregion
+
+"""===========================================AI SETUP STATE/VARS========================================================="""
+#region AI VARS/SETUP
+# optional AI manager preload (unused by default)
+const AIManagerClass := preload("res://Gds folder/ai_managerscene.gd")
+var ai_manager: Node = null
+# ---------- ----------
 var ai_setup: Array = []            # array of dictionaries { "color": "G", "level": 3 }
 var reserved_ai_colors: Array = []  # list of colors reserved for AI
 var ai_level_by_color := {"R": 0, "G": 0, "B": 0, "Y": 0}
-
+var player_is_ai := {"R":false,"G":false,"B":false,"Y":false}
+#endregion
+"""===========================================OTHER GENERAL VARS========================================================="""
+#region OTHER GENERAL/PLAYER VARS
 # board layout (editable from Inspector)
 const BOARD_ROWS: int = 10
 const BOARD_COLS: int = 10
-const MONEY_TILE_ID = 5
-
+var player_effects: Dictionary = {}
+var world_pos: Vector2 = Vector2.ZERO
+var swap_source_player: String = ""
+var swap_target_delegate: String = ""  # NEW
 # === CONFIG / DATABASES ===
 var game_mode: String = "pass"        # "pass" or "ai"
 var player_count: int = 2             # 2..4
@@ -83,7 +79,8 @@ var desired_player_count: int = 2     # temporary store while color choice is pe
 var turn_order: Array = []            # e.g. ["R","B"] or ["R","G","B","Y"]
 var chosen_color : String = ""
 var is_singleplayer_mode := false
-
+var show_tile_debug := false
+var game_over: bool = false
 var player_nodes: Dictionary = {}
 var rarity_weights = {"common":60, "rare":45, "epic":10, "legendary":1}
 var board_tiles: Dictionary = {
@@ -219,7 +216,7 @@ var power_cards_db = {
 	"+3 Move": {"name":"+3 Move","move_value":3,"shop_cost":2,"rarity":"rare","art":"res://assets/Placeholdercard.png"},
 	"-4 Move": {"name":"-4 Move","move_value":-4,"shop_cost":2,"rarity":"rare","art":"res://assets/Placeholdercard.png"},
 	"Swap":    {"name":"Swap","shop_cost":3,"rarity":"epic","art":"res://assets/Placeholdercard.png"}
-	  ,"wintest": {"name":"wintest","shop_cost":0,"rarity":"common"}
+	  #,"wintest": {"name":"wintest","shop_cost":0,"rarity":"common"}
 }
 var permanent_cards_db = {
 	"D20 Upgrade": {
@@ -296,19 +293,14 @@ var permanent_cards_db = {
 # Define constants for the board
 const COLS = 10
 const ROWS = 10
-
 # Effective tile size used by the board (default fallback)
 # Make this a var so we can adjust it in _ready() when the tilemaplayer exists.
 var TILE_SIZE: Vector2 = Vector2(64, 64)
-
-var player_is_ai := {"R":false,"G":false,"B":false,"Y":false}
-
 var max_hand_size: int = 3
 var player_hands := {"R":[], "G":[], "B":[], "Y":[]}
 var hand_nodes := {"R":[], "G":[], "B":[], "Y":[]} # store actual card nodes for each player
 var player_permanents := {"R":[], "G":[], "B":[], "Y":[]}
 var player_dice_sides = {"R":6,"G":6,"B":6,"Y":6}
-var player_money = {"R":10,"G":10,"B":10,"Y":10}
 var player_positions = {"R":1,"G":1,"B":1,"Y":1}
 var BOARD_START: Vector2 = Vector2(336, 624)
 var tile_map = {}
@@ -326,10 +318,12 @@ var player_permanent_cards: Dictionary = {
 	"B": [],
 	"Y": []
 }
+#endregion
+
+"""===============================================SNAKE CONSTS==============================================================="""
+#region SNAKE VARS GLOBAL
 # Global snake/ladder registry
 var snake_map: Dictionary = {}  # tile_num -> destination_tile_num
-var ladder_map: Dictionary = {} # tile_num -> destination_tile_num
-"""SNAKE CONSTS"""
 const SNAKE_SOURCE_ID: int = 0  # your spritesheet source
 # Small Straight Snake (3 tiles min)
 const STRAIGHT_HEAD_ATLAS  := Vector2i(4, 0)
@@ -372,7 +366,10 @@ const COLUMN_PATHS: Array = [
 	# Column 10 (right): 91, 90, 71, 70, 51, 50, 31, 30, 11, 10
 	[91, 90, 71, 70, 51, 50, 31, 30, 11, 10]
 ]
-"""LADDER CONSTS"""
+#endregion
+"""===============================================LADDER CONSTS==============================================================="""
+#region LADDER VARS REGION
+var ladder_map: Dictionary = {} # tile_num -> destination_tile_num
 const LADDER_SOURCE_ID: int = 0
 const LADDER_HEAD_ATLAS  := Vector2i(1, 7)
 const LADDER_BODY_ATLAS  := Vector2i(1, 8) 
@@ -400,6 +397,22 @@ const LADDER_COLUMN_PATHS: Array = [
 	# Column 10: 10 up to 90
 	[10, 11, 30, 31, 50, 51, 70, 71, 90]
 ]
+#endregion
+"""===============================================EXTRA FUNCS AND DEBUGS BEFORE READY==========================================="""
+#region EXTRA FUNCS AND DEBUGS BEFORE READY
+# Debug log UI (create a Label node named "DebugLog" in your scene)
+func log_debug(msg: String) -> void:
+	if debug_log != null:
+		# append line
+		debug_log.text += msg + "\n"
+		# keep only last 20 lines so it doesn't grow forever
+		var lines := debug_log.text.split("\n")
+		if lines.size() > 20:
+			debug_log.text = "\n".join(lines.slice(lines.size() - 20, lines.size()))
+	else:
+		# fallback to console if label missing
+		print("[DEBUG] " + msg)
+var blocked_tiles: Array[int] = []
 # normalize various color names to single-letter codes "R","G","B","Y"
 func _color_name_to_code(col: String) -> String:
 	var s := col.strip_edges().to_lower()
@@ -433,32 +446,10 @@ func is_player_turn(player_color: String) -> bool:
 	var result = current_color == player_color and not ai_turn
 	print("[is_player_turn] cur=%s chosen=%s ai_turn=%s -> %s" % [current_color, player_color, ai_turn, result])
 	return result
-
-# robust permanent helpers (case-insensitive)
-func has_permanent(player_color: String, name: String) -> bool:
-	if not player_permanents.has(player_color):
-		return false
-	var lname := String(name).to_lower()
-	for pd in player_permanents[player_color]:
-		if String(pd.get("name","")).to_lower() == lname:
-			return true
-	return false
-
-func count_permanent_copies(player_color: String, name: String) -> int:
-	if not player_permanents.has(player_color):
-		return 0
-	var lname := String(name).to_lower()
-	var cnt := 0
-	for pd in player_permanents[player_color]:
-		if String(pd.get("name","")).to_lower() == lname:
-			cnt += 1
-	return cnt
-
 func can_be_moved(target_color: String) -> bool:
 	# Unstoppable prevents being moved by others, but snakes still apply (handled elsewhere)
 	return not has_permanent(target_color, "Unstoppable")
 # small safe logger used by the patch (uses your log_debug if exists)
-
 func _perm_log(msg: String) -> void:
 	if has_method("log_debug"):
 		log_debug(msg)
@@ -519,7 +510,21 @@ func get_scaled_tile_size() -> Vector2:
 		return TILE_SIZE
 
 	return Vector2(64, 64)
-"""SNAKE GEN CODE"""
+func check_snake_or_ladder(tile_num: int) -> int:
+	if snake_map.has(tile_num):
+		var dest = snake_map[tile_num]
+		print("Hit snake! Slide from ", tile_num, " to ", dest)
+		return dest
+	elif ladder_map.has(tile_num):
+		var dest = ladder_map[tile_num]
+		print("Hit ladder! Climb from ", tile_num, " to ", dest)
+		return dest
+	return tile_num  # No snake/ladder
+
+#endregion
+
+"""===============================================SNAKE GEN CODE============================================================================"""
+#region SNAKE GEN CODE
 func generate_snakes(count: int):
 	used_cells.clear()
 	var placed = 0
@@ -660,7 +665,9 @@ func draw_snakes_on_layer():
 				if info.get("body_index") == 1:  # First body = neck
 					atlas = NECK_ATLAS
 				snake_tilemaplayer.set_cell(pos, SNAKE_SOURCE_ID, atlas)
-"""LADDER GENERATION CODE"""
+#endregion
+"""=============================================LADDER GENERATION CODE========================================================================="""
+#region LADDER GEN CODE
 func generate_ladders(count: int):
 	var placed = 0
 	var total_attempts = 0
@@ -725,20 +732,12 @@ func draw_ladders_on_layer():
 				ladder_tilemaplayer.set_cell(pos, LADDER_SOURCE_ID, LADDER_TAIL_ATLAS)
 			"ladder_body":
 				ladder_tilemaplayer.set_cell(pos, LADDER_SOURCE_ID, LADDER_BODY_ATLAS)
+#endregion
 # Gameplay: Check tile when player lands
-func check_snake_or_ladder(tile_num: int) -> int:
-	if snake_map.has(tile_num):
-		var dest = snake_map[tile_num]
-		print("Hit snake! Slide from ", tile_num, " to ", dest)
-		return dest
-	elif ladder_map.has(tile_num):
-		var dest = ladder_map[tile_num]
-		print("Hit ladder! Climb from ", tile_num, " to ", dest)
-		return dest
-	return tile_num  # No snake/ladder
-# -------------------------
-# READY
-# -------------------------
+
+"""================================================||||READY||||==========================================================================="""
+
+#region READY
 func _ready() -> void:
 	print("Board bounds: min ", board_tiles.keys().min(), " max ", board_tiles.keys().max())
 	print("Sample: (-13,0)=", board_tiles[Vector2i(-13,0)])
@@ -826,34 +825,68 @@ func _ready() -> void:
 	print("Generated ladders: ", ladder_map)
 	draw_snakes_on_layer()
 	_recalculate_tile_size()
+#endregion
+"""================================================TILE/POS/PLAYER HElPERS========================================================================"""
+#region TILE/POS/PLAYER HElPERS
 
+func _recalculate_tile_size() -> void:
+	var tilemap_layer = $TileMap/Tilemaplayerresized
+	var tile_set = tilemap_layer.tile_set
+	if tile_set == null:
+		TILE_SIZE = Vector2(48, 48)
+		return
+	# Vector2i.tile_size * Vector2.scale → explicit Vector2 conversion
+	var base_tile_size: Vector2 = Vector2(tile_set.tile_size)  # Convert Vector2i → Vector2
+	var scale = tilemap_layer.scale
+	TILE_SIZE = base_tile_size * scale  # Now Vector2 × Vector2 = Vector2
+	print("TileSet.tile_size: ", tile_set.tile_size)
+	print("Layer.scale: ", scale)
+	print("TILE_SIZE: ", TILE_SIZE)
+func generate_tile_map() -> void:
+	tile_map.clear()
+	var tile_num: int = 1
+
+	# BOARD_START expected to be a Vector2 (top-left world origin for tile 100)
+	# BOARD_ROWS, BOARD_COLS expected integers
+	for row in range(BOARD_ROWS):
+		# Use TILE_SIZE (Vector2) safely
+		var y: float = BOARD_START.y - float(row) * TILE_SIZE.y
+		for col in range(BOARD_COLS):
+			var real_col: int = col if (row % 2) == 0 else (BOARD_COLS - 1 - col)
+			var x: float = BOARD_START.x + float(real_col) * TILE_SIZE.x
+			var world_pos: Vector2 = Vector2(x, y)
+			tile_map[tile_num] = world_pos
+			tile_num += 1
+
+	# debug printing
+	if tile_map.has(1): print("Tile 1 pos:", tile_map[1])
+	if tile_map.has(10): print("Tile 10 pos:", tile_map[10])
+	if tile_map.has(BOARD_ROWS * BOARD_COLS): print("Tile final pos:", tile_map[BOARD_ROWS * BOARD_COLS])
+
+	# update player positions if you have that helper
+	if has_method("update_player_positions"):
+		update_player_positions()
 # --- Helpers ---
 # Get world/pixel position for a tile index (1..N).
 func get_position_from_tile_index(tile_index: int) -> Vector2:
 	if tile_index <= 0:
 		return Vector2.ZERO
-
 	var row := int((tile_index - 1) / COLS)
 	var col := int((tile_index - 1) % COLS)
-
 	# Handle snaking rows (reverse direction every other row)
 	if row % 2 == 1:
 		col = COLS - 1 - col
-
 	# Convert to pixel position (bottom row is index 0)
 	var x := float(col) * TILE_SIZE.x + TILE_SIZE.x * 0.5
 	var y := float(ROWS - 1 - row) * TILE_SIZE.y + TILE_SIZE.y * 0.5
-
 	return Vector2(x, y)
 func xy_to_tile_index(xy: Vector2i) -> int:
 	var col := xy.x
 	var row_from_top := xy.y
 	var row_from_bottom := ROWS - 1 - row_from_top
-
 	var col_snake := col
 	if row_from_bottom % 2 == 1:
 		col_snake = COLS - 1 - col
-
 	return row_from_bottom * COLS + col_snake + 1
 
 func tile_index_to_xy(tile_num: int) -> Vector2i:
@@ -862,38 +895,6 @@ func tile_index_to_xy(tile_num: int) -> Vector2i:
 	if row % 2 == 1:  # Odd rows: right→left
 		col = 9 - col
 	return Vector2i(col, row)
-
-func spawn_snake_tiles(high_tile: int, low_tile: int) -> void:
-	var snake := SnakeSpriteScene.instantiate()
-	add_child(snake)
-
-	var world_points := build_snake_world_path(high_tile, low_tile)
-	snake.build_from_world_points(world_points)
-
-func build_snake_world_path(head_tile: int, tail_tile: int) -> Array[Vector2]:
-	var path: Array[Vector2] = []
-
-	var head_xy: Vector2i = tile_index_to_xy(head_tile)
-	var tail_xy: Vector2i = tile_index_to_xy(tail_tile)
-
-	var x := head_xy.x
-	var y := head_xy.y
-
-	var cell := Vector2i(x, y)
-	path.append(get_world_center_from_tile_coords(cell))
-
-	while x != tail_xy.x:
-		x += 1 if tail_xy.x > x else -1
-		cell = Vector2i(x, y)
-		path.append(get_world_center_from_tile_coords(cell))
-
-	while y != tail_xy.y:
-		y += 1 if tail_xy.y > y else -1
-		cell = Vector2i(x, y)
-		path.append(get_world_center_from_tile_coords(cell))
-
-	return path
-
 
 func get_world_pos_from_tile_coords(cell: Vector2i) -> Vector2:
 	var tm: TileMapLayer = $TileMap/Tilemaplayerresized
@@ -917,64 +918,15 @@ func move_player_to_tile(color: String, tile_index: int) -> void:
 	if n == null:
 		return
 	n.global_position = get_world_center_from_tile_index(tile_index) + offset.get(color, Vector2.ZERO)
-func get_snake_cells(head_tile: int, tail_tile: int) -> Array[Vector2i]:
-	var cells: Array[Vector2i] = []
-
-	var head_xy: Vector2i = tile_index_to_xy(head_tile)
-	var tail_xy: Vector2i = tile_index_to_xy(tail_tile)
-
-	var x := head_xy.x
-	var y := head_xy.y
-	cells.append(Vector2i(x, y))
-
-	while x != tail_xy.x:
-		x += 1 if tail_xy.x > x else -1
-		cells.append(Vector2i(x, y))
-
-	while y != tail_xy.y:
-		y += 1 if tail_xy.y > y else -1
-		cells.append(Vector2i(x, y))
-
-	return cells
-func get_snake_tilemap_coords(head_tile: int, tail_tile: int) -> Array[Vector2i]:
-	var origin = get_board_origin()
-	var cells := get_snake_cells(head_tile, tail_tile)
-	
-	var tm_cells: Array[Vector2i] = []
-	for logical_xy in cells:
-		# Offset by board origin
-		var tm_x = logical_xy.x + origin.x
-		var tm_y = logical_xy.y + origin.y  
-		tm_cells.append(Vector2i(tm_x, tm_y))
-	
-	return tm_cells
 
 func get_board_origin() -> Vector2i:
 	var world_pos_tile1 = tile_map[1]
 	var local_pos = tilemaplayer.to_local(world_pos_tile1)
 	var tm_coords: Vector2i = tilemaplayer.local_to_map(local_pos)
 	return tm_coords
-
-func spawn_snake_on_tilemap(head_tile: int, tail_tile: int) -> void:
-	var origin = get_board_origin()  # (-13, 0)
-	var cells := get_snake_cells(head_tile, tail_tile)
-	print("Snake", head_tile, "->", tail_tile, "raw cells:", cells)
-	
-	for i in range(cells.size()):
-		var logical_xy: Vector2i = cells[i]
-		# ADD origin offset: x += -13, y += 0
-		var tm_coords = Vector2i(logical_xy.x + origin.x, logical_xy.y + origin.y)
-		print("  Cell", i, logical_xy, "→ TileMap", tm_coords)
-		
-		if i == 0:
-			snake_tilemaplayer.set_cell(tm_coords, SNAKE_SOURCE_ID, STRAIGHT_HEAD_ATLAS)
-		elif i == cells.size() - 1:
-			snake_tilemaplayer.set_cell(tm_coords, SNAKE_SOURCE_ID, STRAIGHT_TAIL_ATLAS)
-		else:
-			snake_tilemaplayer.set_cell(tm_coords, SNAKE_SOURCE_ID, STRAIGHT_BODY_ATLAS)
-# -------------------------
-# AI setup UI (top-level helpers)
-# -------------------------
+#endregion
+"""================================================AI SETUP HELPERS==================================================================="""
+#region AI SETUP/HELPERS
 func show_ai_setup(default_count: int = 1) -> void:
 	var old = get_node_or_null("AISetupWindow")
 	if old:
@@ -1089,41 +1041,11 @@ func rebuild_ai_rows(count: int, rows_container: Node, shared_cb: CheckBox) -> v
 
 		rows_container.add_child(row)
 
-
 func _on_ai_count_changed(rows_container: Node, shared_cb: CheckBox, id: int) -> void:
 	var count := id
 	if count < 1:
 		count = 1
 	rebuild_ai_rows(count, rows_container, shared_cb)
-
-
-func _on_shared_toggled(rows_container: Node, pressed: bool) -> void:
-	# toggle visibility of per-row level selectors
-	var idx := 0
-	for row in rows_container.get_children():
-		var level_node_name = "ai_level_%d" % idx
-		var lvl_node = row.get_node_or_null(level_node_name)
-		if lvl_node:
-			lvl_node.visible = not pressed
-		idx += 1
-func get_current_player_color() -> String:
-	return turn_order[current_turn_index]
-func _finalize_setup():
-	# Hide unused player sprites
-	for color in ["R","G","B","Y"]:
-		if color in turn_order:
-			player_nodes[color].show()
-		else:
-			player_nodes[color].hide()
-func get_valid_swap_targets() -> Array:
-	var targets: Array = []
-	var current_color = get_current_player_color()
-	for color in turn_order: # active players
-		if color != current_color:
-			targets.append(color)
-	return targets
-
-
 # Called when Start Test pressed
 # Note: win declared as Node so we don't depend on a specific Dialog type in the signature
 func _on_ai_setup_start(win: Node, ai_count_select: OptionButton, shared_cb: CheckBox, shared_level_select: OptionButton, rows_container: Node) -> void:
@@ -1178,20 +1100,112 @@ func _on_ai_setup_start(win: Node, ai_count_select: OptionButton, shared_cb: Che
 		win.hide()
 	colourpanel.visible = true
 	rollresult.text = "Choose your color (AI colors reserved)."
+func _deferred_start_ai_turn(color: String) -> void:
+	# ✅ Only one deferred AI turn at a time
+	if not ai_turn_in_progress:
+		ai_turn_in_progress = true
+	ai_take_turn(color)
 
 
-# Debug helper: prints the core AI/player state
-func _debug_print_ai_state(tag: String = "") -> void:
-	print("=== DEBUG AI STATE ", tag, " ===")
-	print("game_mode:", game_mode)
-	print("player_count:", player_count, " desired_player_count:", desired_player_count)
-	print("ai_setup:", ai_setup)
-	print("reserved_ai_colors:", reserved_ai_colors)
-	print("ai_level_by_color:", ai_level_by_color)
-	print("player_is_ai:", player_is_ai)
-	print("turn_order:", turn_order)
-	print("current_turn_index:", current_turn_index)
-	print("==============================")
+func ai_play_random_card(color: String, rarity: String = "any") -> void:
+	if not player_hands.has(color):
+		return
+
+	var candidates := []
+	for i in range(player_hands[color].size()):
+		var cd = player_hands[color][i]
+		var r = String(cd.get("rarity", "common"))
+		if rarity == "any" or r == rarity or (rarity == "field" and r == "epic"):
+			candidates.append(i)
+
+	if candidates.is_empty():
+		log_debug("%s (AI) tried to play %s card but had none." % [color, rarity])
+		return
+
+	candidates.shuffle()
+	var idx = candidates[0]
+	var card_data = player_hands[color][idx]
+
+	# 🕒 Simulate AI "thinking" delay
+	log_debug("%s (AI) is thinking about playing a card..." % color)
+	await get_tree().create_timer(1.8).timeout
+
+	# Remove card from hand
+	player_hands[color].remove_at(idx)
+
+	# 🖐️ Update UI if AI’s hand is visible (for testing)
+	if get_current_player() == color:
+		refresh_hand_for_current_player()
+
+	# 🎭 Small delay before applying effect (like a card “animation”)
+	log_debug("%s (AI) decided to play: %s" % [color, card_data.get("name", "Unknown")])
+	await get_tree().create_timer(1.2).timeout
+
+	# ⚡ Actually apply effect now
+	apply_card_effect_by_name(color, card_data)
+
+	# ⏳ Optional: short cooldown before AI ends its turn (for readability)
+	await get_tree().create_timer(0.8).timeout
+func ai_buy_card(color: String, rarity: String = "common") -> void:
+	var choices := []
+	for name in power_cards_db.keys():
+		var cd = power_cards_db[name]
+		if String(cd.get("rarity","common")) != rarity:
+			continue
+		var cost = int(cd.get("shop_cost",0))
+		if player_money.get(color,0) >= cost:
+			choices.append(cd.duplicate(true))
+	if choices.size() == 0:
+		log_debug("%s (AI) wanted to buy a %s card but couldn't afford/none available." % [color, rarity])
+		return
+	choices.shuffle()
+	var pick = choices[0]
+	var cost = int(pick.get("shop_cost",0))
+	player_money[color] -= cost
+	player_hands[color].append(pick)
+	if color == get_current_player():
+		refresh_hand_for_current_player()
+	refresh_money_label()
+	rollresult.text = "%s (AI) bought %s" % [color, String(pick.get("name","unknown"))]
+	log_debug("%s (AI) bought %s for $%d" % [color, String(pick.get("name","unknown")), cost])
+
+func ai_buy_permanent(color: String, rarity: String = "common") -> void:
+	var choices := []
+	for name in permanent_cards_db.keys():
+		var pd = permanent_cards_db[name]
+		if String(pd.get("rarity","common")) != rarity:
+			continue
+		var cost = int(pd.get("shop_cost",0))
+		if player_money.get(color,0) >= cost:
+			choices.append(pd.duplicate(true))
+	if choices.size() == 0:
+		log_debug("%s (AI) wanted to buy a %s permanent but couldn't afford/none available." % [color, rarity])
+		return
+	choices.shuffle()
+	var picked = choices[0]
+	player_money[color] -= int(picked.get("shop_cost",0))
+	player_permanents[color].append(picked)
+	apply_permanent_effect(picked, color)
+	refresh_permanent_panel_for_current_player()
+	refresh_money_label()
+	rollresult.text = "%s (AI) bought permanent %s" % [color, String(picked.get("name","unknown"))]
+	log_debug("%s (AI) bought permanent %s for $%d" % [color, String(picked.get("name","unknown")), int(picked.get("shop_cost",0))])
+
+
+#endregion
+"""=================================================PLAYER WIN/CONFIGURE MODE/COLOR AND RELADED CODE============================================="""
+
+#region PLAYER WIN/CONFIGURE MODE/COLOR AND RELADED CODE
+
+func get_current_player_color() -> String:
+	return turn_order[current_turn_index]
+func _finalize_setup():
+	# Hide unused player sprites
+	for color in ["R","G","B","Y"]:
+		if color in turn_order:
+			player_nodes[color].show()
+		else:
+			player_nodes[color].hide()
 
 # -------------------------
 func configure_mode(mode: String, count: int, config: Dictionary = {}) -> void:
@@ -1347,23 +1361,6 @@ func _on_choose_color(color_letter: String) -> void:
 	_debug_print_ai_state("after human pick")
 	_finish_initial_setup_and_start()
 
-func start_swap_selection(source_player_color: String) -> void:
-	swap_source_player = source_player_color
-	swap_target_delegate = ""   # reset
-	clear_children(playerswapcontainer)
-	for col in player_nodes.keys():
-		if col == source_player_color:
-			continue
-		var btn := Button.new()
-		btn.text = col
-		btn.pressed.connect(Callable(self, "_on_swap_target_selected").bind(col))
-		playerswapcontainer.add_child(btn)
-	playerswappanel.visible = true
-	# If this is pass-and-play, show instructions
-	rollresult.text = "%s, choose a target for %s's Swap!" % [get_current_player(), source_player_color]
-# Add an informational debug line inside start_turn() so we can see what it's doing
-# === TURN MANAGEMENT FIX ===
-
 var ai_turn_in_progress := false  # 🛡️ Guard flag to prevent triple-turn bug
 func start_turn(level := 0, color := "") -> void:
 	if color == "":
@@ -1393,22 +1390,6 @@ func start_turn(level := 0, color := "") -> void:
 		ai_turn_in_progress = true
 		call_deferred("_deferred_start_ai_turn", color)
 
-func update_all_hand_card_states() -> void:
-	for color in hand_nodes.keys():
-		var is_current: bool = (color == get_current_player())
-		var is_ai: bool = player_is_ai.get(color, false)
-
-		for card_node in hand_nodes[color]:
-			if card_node and card_node.has_method("set_turn_state"):
-				# Disable card interaction if not current player's turn OR if it's an AI hand
-				card_node.set_turn_state(is_current and not is_ai, has_rolled_dice)
-
-
-func _deferred_start_ai_turn(color: String) -> void:
-	# ✅ Only one deferred AI turn at a time
-	if not ai_turn_in_progress:
-		ai_turn_in_progress = true
-	ai_take_turn(color)
 func _finish_initial_setup_and_start() -> void:
 	if turn_order.is_empty():
 		turn_order = ["R","G","B","Y"].slice(0, clamp(desired_player_count, 1, 4))
@@ -1425,54 +1406,49 @@ func _finish_initial_setup_and_start() -> void:
 	start_turn()
 	ensure_money_label()
 	refresh_money_label()
-
-
-# ---------- Money label helpers ----------
-func ensure_money_label() -> void:
-	if moneylabel == null or not moneylabel is Label:
-		var node = get_node_or_null("MoneyLabel")
-		if node and node is Label:
-			moneylabel = node
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var screen_pos: Vector2 = event.position
+		var world_pos: Vector2 = get_global_mouse_position()
+		
+		# Dictionary nearest tile lookup (unchanged)
+		var nearest_tile: int = -1
+		var min_dist: float = INF
+		for key in tile_map.keys():
+			var pos: Vector2 = tile_map[key] as Vector2  # Assuming tile_map[key] gives world center
+			var d: float = pos.distance_to(world_pos)
+			if d < min_dist:
+				min_dist = d
+				nearest_tile = int(key)
+		
+		var cell_info: String = "no-layer"
+		if tilemaplayer != null:
+			# FIXED: Convert world to local, then local_to_map
+			var local_pos: Vector2 = tilemaplayer.to_local(world_pos)
+			var cell: Vector2i = tilemaplayer.local_to_map(local_pos)
+			cell_info = "cell: " + str(cell)
+			print("[DEBUG_CLICK] world:", world_pos, " local:", local_pos, " cell:", cell)
+		
+		if nearest_tile != -1:
+			print("[DEBUG_CLICK] screen:", screen_pos, " world:", world_pos,
+				  " nearest_tile:", nearest_tile, " tile_pos:", tile_map[nearest_tile],
+				  " dist:", min_dist, " layer_cell:", cell_info)
 		else:
-			var lbl = Label.new()
-			lbl.name = "MoneyLabel"
-			lbl.anchor_left = 0
-			lbl.anchor_top = 0
-			lbl.margin_left = 12
-			lbl.margin_top = 8
-			add_child(lbl)
-			moneylabel = lbl
-	moneylabel.visible = true
+			print("[DEBUG_CLICK] screen:", screen_pos, " nearest_tile: none", " layer_cell:", cell_info)
+func _check_victory_for_color(color: String) -> bool:
+	# returns true if this color has reached the finish and handled victory UI
+	if player_positions.get(color, 0) >= 100:
+		_on_player_wins(color)
+		return true
+	return false
 
-func refresh_money_label() -> void:
-	if moneylabel == null:
-		return
-	if turn_order.is_empty():
-		moneylabel.text = ""
-		return
-	var cp := get_current_player()
-	if cp == "":
-		moneylabel.text = ""
-		return
-	var money := int(player_money.get(cp, 0))
-	moneylabel.text = "%s  $%d" % [cp, money]
+func _on_player_wins(color: String) -> void:
+	_perm_log("%s WINS the game!" % color)
+	show_victory_panel("%s won the game!" % color)
+#endregion
 
-func refresh_all_money_labels() -> void:
-	if moneylabel == null:
-		return
-	var lines := []
-	for c in ["R","G","B","Y"]:
-		var m = int(player_money.get(c, 0))
-		lines.append("%s:$%d" % [c, m])
-
-	var out := ""
-	for i in range(lines.size()):
-		if i > 0:
-			out += "  |  "
-		out += lines[i]
-	moneylabel.text = out
-
-
+"""================================================HANDS AND RELATED CODE==================================================================="""
+#region HANDS AND RELATED
 # -------------------------------
 # HAND (per-player model + shared UI)
 # -------------------------------
@@ -1529,12 +1505,7 @@ func refresh_hand_for_current_player() -> void:
 
 	is_refreshing_hand = false
 
-# Update all cards in hand container with current turn state
-func update_hand_turn_state() -> void:
-	var is_my_turn = (get_current_player() == get_current_player_color())
-	for card in hand_container.get_children():
-		if card.has_method("set_turn_state"):
-			card.set_turn_state(is_my_turn, has_rolled_dice)
+
 
 # Handle card played signal
 func _on_card_clicked(card_data):
@@ -1547,12 +1518,10 @@ func _on_card_clicked(card_data):
 	else:
 		apply_card_effect_by_name(get_current_player(), card_data)
 
-
 # Remove a single matching card by unique identifier (recommend adding 'id' to cards)
 func _remove_card_from_player_hand(player_color: String, card_data: Dictionary) -> void:
 	if not player_hands.has(player_color):
 		return
-
 	var id_to_find = card_data.get("id", null)
 	if id_to_find == null:
 		# fallback to name match if no id present
@@ -1573,26 +1542,39 @@ func _remove_card_from_player_hand(player_color: String, card_data: Dictionary) 
 	if hand_nodes.has(player_color):
 		var id_to_find_visual = card_data.get("id", null)
 		var name_to_find_visual = String(card_data.get("name", ""))
-
 		for j in range(hand_nodes[player_color].size()):
 			var node = hand_nodes[player_color][j]
-
 			# node is an instance of spritecardscene.gd, so use node.card_data
 			var node_id   = node.card_data.get("id", null)
 			var node_name = String(node.card_data.get("name", ""))
-
 			var is_match := false
 			if id_to_find_visual != null:
 				is_match = (node_id == id_to_find_visual)
 			else:
 				is_match = (node_name == name_to_find_visual)
-
 			if is_match:
 				node.queue_free()
 				hand_nodes[player_color].remove_at(j)
 				break
+func update_all_hand_card_states() -> void:
+	for color in hand_nodes.keys():
+		var is_current: bool = (color == get_current_player())
+		var is_ai: bool = player_is_ai.get(color, false)
 
+		for card_node in hand_nodes[color]:
+			if card_node and card_node.has_method("set_turn_state"):
+				# Disable card interaction if not current player's turn OR if it's an AI hand
+				card_node.set_turn_state(is_current and not is_ai, has_rolled_dice)
+# Update all cards in hand container with current turn state
+func update_hand_turn_state() -> void:
+	var is_my_turn = (get_current_player() == get_current_player_color())
+	for card in hand_container.get_children():
+		if card.has_method("set_turn_state"):
+			card.set_turn_state(is_my_turn, has_rolled_dice)
+#endregion
+"""================================================AI MOVEMENT/SETUP RELATED CODE==================================================="""
 
+#region AI MOVEMENT/GAME SETUP RELATED CODE
 func setup_game(config: Dictionary) -> void:
 	# Instead of duplicating logic, just delegate to configure_mode
 	configure_mode("ai", 1 + int(config.get("ai_count", 0)), config)
@@ -1614,7 +1596,6 @@ func setup_game(config: Dictionary) -> void:
 
 func _deferred_start_ai_turn_with_level(level: int, color: String) -> void:
 	call_deferred("_perform_ai_turn", level, color)
-
 
 func _perform_ai_turn(level: int, color: String) -> void:
 	await get_tree().create_timer(0.35).timeout
@@ -1824,36 +1805,13 @@ func _ai_roll_and_move(color: String) -> void:
 	end_turn()
 
 
-func _generate_random_power_card() -> Dictionary:
-	# return an empty dict if no cards available
-	if power_cards_db.size() == 0:
-		return {}
 
-	# explicit types to avoid "cannot infer type" errors
-	var keys: Array = power_cards_db.keys()
-	var idx: int = int(randi() % keys.size())
-	var random_key: String = String(keys[idx])
-	var card: Dictionary = power_cards_db[random_key]
-	return card.duplicate(true)
+#endregion
 
-func _give_random_power_card_to_player(player_color: String) -> void:
-	var card_data: Dictionary = _generate_random_power_card()
 
-	print_debug("CARD DATA CHOSEN:", card_data)  # already present
+"""================================================ SWAP UI & Logic ==================================================================="""
 
-	if card_data.is_empty():
-		return
-
-	var card = card_scene.instantiate()
-	card.set_card_data(card_data)
-	card.connect("card_clicked", Callable(self, "_on_card_clicked"))
-	hand_container.add_child(card)
-	hand_nodes[player_color].append(card)
-	player_hands[player_color].append(card_data)
-
-# -------------------------------
-# SWAP UI & Logic
-# -------------------------------
+#region SWAP AND SWAP MOVEMENT CODE
 
 func _on_swap_target_selected(target_player_color: String) -> void:
 	if swap_source_player == "":
@@ -1889,10 +1847,53 @@ func update_player_positions() -> void:
 func clear_children(node: Node) -> void:
 	for child in node.get_children():
 		child.queue_free()
+func start_swap_selection(source_player_color: String) -> void:
+	swap_source_player = source_player_color
+	swap_target_delegate = ""   # reset
+	clear_children(playerswapcontainer)
+	for col in player_nodes.keys():
+		if col == source_player_color:
+			continue
+		var btn := Button.new()
+		btn.text = col
+		btn.pressed.connect(Callable(self, "_on_swap_target_selected").bind(col))
+		playerswapcontainer.add_child(btn)
+	playerswappanel.visible = true
+	# If this is pass-and-play, show instructions
+	rollresult.text = "%s, choose a target for %s's Swap!" % [get_current_player(), source_player_color]
+	
+func get_valid_swap_targets() -> Array:
+	var targets: Array = []
+	var current_color = get_current_player_color()
+	for color in turn_order: # active players
+		if color != current_color:
+			targets.append(color)
+	return targets
 
-# -------------------------------
-# SHOP / PERMANENTS
-# -------------------------------
+#endregion
+
+"""================================================SHOP / PERMANENTS / DEBT==================================================================="""
+
+#region SHOPS/PERMS/DEBT
+# robust permanent helpers (case-insensitive)
+func has_permanent(player_color: String, name: String) -> bool:
+	if not player_permanents.has(player_color):
+		return false
+	var lname := String(name).to_lower()
+	for pd in player_permanents[player_color]:
+		if String(pd.get("name","")).to_lower() == lname:
+			return true
+	return false
+
+func count_permanent_copies(player_color: String, name: String) -> int:
+	if not player_permanents.has(player_color):
+		return 0
+	var lname := String(name).to_lower()
+	var cnt := 0
+	for pd in player_permanents[player_color]:
+		if String(pd.get("name","")).to_lower() == lname:
+			cnt += 1
+	return cnt
 func get_max_debt(color: String) -> int:
 	# Each Bank Card allows $10 debt
 	var copies: int = count_permanent_copies(color, "Bank Card")
@@ -2107,8 +2108,208 @@ func apply_permanent_effect(card_data: Dictionary, player_color: String) -> void
 		"Domovei":# DoMovei: grants +2 movement per power card in hand (stacks if multiple DoMovei permanents)
 			_perm_log("%s bought Domovei (movement bonus per card in hand)." % player_color)
 
+#endregion
+"""=====================================================MONEY HELPERS======================================================================"""
+#region MONEY HELPERS
+var COIN_SIZE_FACTOR: float = 0.75
+var COIN_OFFSET: Vector2 = Vector2(0, -8)
+func add_money(color: String, amount: int) -> void:
+	if not player_money.has(color):
+		return
 
-# -------------------------------
+	var current_money: int = int(player_money[color])
+	var max_debt: int = get_max_debt(color)
+
+	var new_balance: int = current_money + amount
+	if new_balance < -max_debt:
+		new_balance = -max_debt
+
+	player_money[color] = new_balance
+	refresh_money_label()
+
+	# Logging
+	if new_balance < 0:
+		_perm_log("%s is now in debt: $%d (max debt: $%d)" % [color, new_balance, max_debt])
+	else:
+		_perm_log("%s now has $%d" % [color, new_balance])
+
+func set_coin_visuals(size_factor: float, offset_vec: Vector2):
+	for tile_num: int in money_nodes_by_tile.keys():
+		var coin: Sprite2D = money_nodes_by_tile[tile_num]
+		if tile_map.has(tile_num):
+			# Center coin + vertical adjustment to match players
+			var center_offset = Vector2(TILE_SIZE.x * 0.5, TILE_SIZE.y * 0.5 - 6)
+			coin.global_position = tile_map[tile_num] + center_offset
+		coin.scale = Vector2.ONE * size_factor
+
+func spawn_money_tiles(count: int = 5) -> void:
+	clear_money_tiles()
+	
+	# BUILD blocked_tiles from ALL snake/ladders
+	var temp_blocked: Array[int] = []
+	
+	# Snakes: heads + tails
+	for head in snake_map.keys():
+		temp_blocked.append(head)
+		temp_blocked.append(snake_map[head])
+	
+	# Ladders: bottoms + tops  
+	for bottom in ladder_map.keys():
+		temp_blocked.append(bottom)
+		temp_blocked.append(ladder_map[bottom])
+	
+	# Remove duplicates manually
+	blocked_tiles.clear()
+	for tile in temp_blocked:
+		if not blocked_tiles.has(tile):
+			blocked_tiles.append(tile)
+	
+	# Add start/finish
+	if not blocked_tiles.has(1): blocked_tiles.append(1)
+	if not blocked_tiles.has(100): blocked_tiles.append(100)
+	blocked_tiles.sort()
+	
+	# Safe tiles only
+	var available_tiles: Array[int] = []
+	for tile_num: int in range(2, 100):
+		if not blocked_tiles.has(tile_num):
+			available_tiles.append(tile_num)
+	
+	available_tiles.shuffle()
+	money_tiles_positions = available_tiles.slice(0, count)
+	
+	for tile_num in money_tiles_positions:
+		var tile_coords: Vector2i = number_to_tile(tile_num)
+		moneylayer.set_cell(tile_coords, MONEY_SOURCE_ID, MONEY_ATLAS_COORD)
+	
+	print("🚫 Blocked: ", blocked_tiles.size(), " | 💰 Safe: ", money_tiles_positions)
+
+
+func clear_money_tiles() -> void:
+	moneylayer.clear()
+	money_tiles_positions.clear()
+# Check player collection
+func check_for_money_collection(player_color: String) -> void:
+	var current_tile: int = player_positions[player_color]
+	
+	if current_tile in money_tiles_positions:
+		player_money[player_color] += money_value
+		money_tiles_positions.erase(current_tile)
+		
+		# Remove from TileMapLayer instantly
+		var tile_coords: Vector2i = number_to_tile(current_tile)
+		moneylayer.set_cell(tile_coords, -1)  # -1 = empty
+		
+		rollresult.text = player_color + " collected $" + str(money_value) + "!"
+		refresh_money_label()
+		print(player_color, " collected money at tile ", current_tile)
+
+
+func get_tile_number_from_coords(cell: Vector2i) -> int:
+	return cell.x + cell.y * 10
+
+func get_offset_if_needed(tile_num: int, color: String) -> Vector2:
+	var center = Vector2(TILE_SIZE.x * 0.5, TILE_SIZE.y * 0.5)  # (24, 24)
+	
+	# Move ALL players up 6 pixels for visual centering
+	var vertical_adjust = Vector2(0, -6)
+	
+	var color_offsets = {
+		"R": Vector2(-4, -4),
+		"G": Vector2(4, -4), 
+		"B": Vector2(-4, 4),
+		"Y": Vector2(4, 4)
+	}
+	
+	return center + vertical_adjust + color_offsets.get(color, Vector2.ZERO)
+
+
+# ---------- Money label helpers ----------
+func ensure_money_label() -> void:
+	if moneylabel == null or not moneylabel is Label:
+		var node = get_node_or_null("MoneyLabel")
+		if node and node is Label:
+			moneylabel = node
+		else:
+			var lbl = Label.new()
+			lbl.name = "MoneyLabel"
+			lbl.anchor_left = 0
+			lbl.anchor_top = 0
+			lbl.margin_left = 12
+			lbl.margin_top = 8
+			add_child(lbl)
+			moneylabel = lbl
+	moneylabel.visible = true
+
+func refresh_money_label() -> void:
+	if moneylabel == null:
+		return
+	if turn_order.is_empty():
+		moneylabel.text = ""
+		return
+	var cp := get_current_player()
+	if cp == "":
+		moneylabel.text = ""
+		return
+	var money := int(player_money.get(cp, 0))
+	moneylabel.text = "%s  $%d" % [cp, money]
+
+func refresh_all_money_labels() -> void:
+	if moneylabel == null:
+		return
+	var lines := []
+	for c in ["R","G","B","Y"]:
+		var m = int(player_money.get(c, 0))
+		lines.append("%s:$%d" % [c, m])
+
+	var out := ""
+	for i in range(lines.size()):
+		if i > 0:
+			out += "  |  "
+		out += lines[i]
+	moneylabel.text = out
+func apply_savings_interest(color: String) -> void:
+	if not player_money.has(color):
+		return
+
+	var balance: int = int(player_money[color])
+
+	# 🚫 No interest if in debt
+	if balance <= 0:
+		_perm_log("%s earns no interest (in debt or broke)." % color)
+		return
+
+	# Earn $1 for every $2
+	var interest: int = balance / 2
+	if interest > 0:
+		add_money(color, interest)
+		_perm_log("%s earned $%d in interest (Savings Account)." % [color, interest])
+func try_spend_money(color: String, amount: int) -> bool:
+	if not player_money.has(color):
+		return false
+	var current_money: int = int(player_money[color])
+	var max_debt: int = get_max_debt(color)
+	var min_balance_allowed: int = -max_debt
+	# compute projected balance
+	var projected: int = current_money - int(amount)
+	if projected < min_balance_allowed:
+		# can't afford even with overdraft
+		_perm_log("%s cannot spend $%d (would go below allowed debt %d)" % [color, amount, min_balance_allowed])
+		return false
+	# commit spend
+	player_money[color] = projected
+	refresh_money_label()
+	if projected < 0:
+		_perm_log("%s spent $%d -> now in debt $%d (max %d)" % [color, amount, projected, max_debt])
+	else:
+		_perm_log("%s spent $%d -> $%d" % [color, amount, projected])
+	return true
+
+
+#endregion
+"""================================================DICEROLL/CARDEFFECTS/ENDTURN/GENERATE RANDOM CARDS========================================================"""
+
+#region DICEROLL/CARDEFFECT
 # GAME LOGIC (movement)
 # -------------------------------
 func apply_card_effect(move_value: int) -> void:
@@ -2155,6 +2356,32 @@ func apply_tramp_effect(color: String) -> void:
 	player_hands[color].append(card)
 	_perm_log("%s's Tramp generated a free power card: %s" % [color, random_key])
 	refresh_hand_for_current_player()
+func _generate_random_power_card() -> Dictionary:
+	# return an empty dict if no cards available
+	if power_cards_db.size() == 0:
+		return {}
+
+	# explicit types to avoid "cannot infer type" errors
+	var keys: Array = power_cards_db.keys()
+	var idx: int = int(randi() % keys.size())
+	var random_key: String = String(keys[idx])
+	var card: Dictionary = power_cards_db[random_key]
+	return card.duplicate(true)
+
+func _give_random_power_card_to_player(player_color: String) -> void:
+	var card_data: Dictionary = _generate_random_power_card()
+
+	print_debug("CARD DATA CHOSEN:", card_data)  # already present
+
+	if card_data.is_empty():
+		return
+
+	var card = card_scene.instantiate()
+	card.set_card_data(card_data)
+	card.connect("card_clicked", Callable(self, "_on_card_clicked"))
+	hand_container.add_child(card)
+	hand_nodes[player_color].append(card)
+	player_hands[player_color].append(card_data)
 
 func _on_dicerollbutton_pressed() -> void:
 	if has_rolled_dice:
@@ -2243,42 +2470,7 @@ func _on_dicerollbutton_pressed() -> void:
 	check_for_money_collection(current_color)
 	# --- End Turn (once!) ---
 	end_turn()
-func apply_savings_interest(color: String) -> void:
-	if not player_money.has(color):
-		return
 
-	var balance: int = int(player_money[color])
-
-	# 🚫 No interest if in debt
-	if balance <= 0:
-		_perm_log("%s earns no interest (in debt or broke)." % color)
-		return
-
-	# Earn $1 for every $2
-	var interest: int = balance / 2
-	if interest > 0:
-		add_money(color, interest)
-		_perm_log("%s earned $%d in interest (Savings Account)." % [color, interest])
-func try_spend_money(color: String, amount: int) -> bool:
-	if not player_money.has(color):
-		return false
-	var current_money: int = int(player_money[color])
-	var max_debt: int = get_max_debt(color)
-	var min_balance_allowed: int = -max_debt
-	# compute projected balance
-	var projected: int = current_money - int(amount)
-	if projected < min_balance_allowed:
-		# can't afford even with overdraft
-		_perm_log("%s cannot spend $%d (would go below allowed debt %d)" % [color, amount, min_balance_allowed])
-		return false
-	# commit spend
-	player_money[color] = projected
-	refresh_money_label()
-	if projected < 0:
-		_perm_log("%s spent $%d -> now in debt $%d (max %d)" % [color, amount, projected, max_debt])
-	else:
-		_perm_log("%s spent $%d -> $%d" % [color, amount, projected])
-	return true
 # Handle generic card effects by name
 func apply_card_effect_by_name(color: String, card_data: Dictionary) -> void:
 	var card_name := String(card_data.get("name", ""))
@@ -2399,149 +2591,10 @@ func get_current_player() -> String:
 		current_turn_index = 0
 		return turn_order[0] if turn_order.size() > 0 else ""
 	return turn_order[current_turn_index]
+#endregion
 
-
-func generate_tile_map() -> void:
-	tile_map.clear()
-	var tile_num: int = 1
-
-	# BOARD_START expected to be a Vector2 (top-left world origin for tile 100)
-	# BOARD_ROWS, BOARD_COLS expected integers
-	for row in range(BOARD_ROWS):
-		# Use TILE_SIZE (Vector2) safely
-		var y: float = BOARD_START.y - float(row) * TILE_SIZE.y
-		for col in range(BOARD_COLS):
-			var real_col: int = col if (row % 2) == 0 else (BOARD_COLS - 1 - col)
-			var x: float = BOARD_START.x + float(real_col) * TILE_SIZE.x
-			var world_pos: Vector2 = Vector2(x, y)
-			tile_map[tile_num] = world_pos
-			tile_num += 1
-
-	# debug printing
-	if tile_map.has(1): print("Tile 1 pos:", tile_map[1])
-	if tile_map.has(10): print("Tile 10 pos:", tile_map[10])
-	if tile_map.has(BOARD_ROWS * BOARD_COLS): print("Tile final pos:", tile_map[BOARD_ROWS * BOARD_COLS])
-
-	# update player positions if you have that helper
-	if has_method("update_player_positions"):
-		update_player_positions()
-
-
-# --- Money helpers ---
-var COIN_SIZE_FACTOR: float = 0.75
-var COIN_OFFSET: Vector2 = Vector2(0, -8)
-func add_money(color: String, amount: int) -> void:
-	if not player_money.has(color):
-		return
-
-	var current_money: int = int(player_money[color])
-	var max_debt: int = get_max_debt(color)
-
-	var new_balance: int = current_money + amount
-	if new_balance < -max_debt:
-		new_balance = -max_debt
-
-	player_money[color] = new_balance
-	refresh_money_label()
-
-	# Logging
-	if new_balance < 0:
-		_perm_log("%s is now in debt: $%d (max debt: $%d)" % [color, new_balance, max_debt])
-	else:
-		_perm_log("%s now has $%d" % [color, new_balance])
-
-func set_coin_visuals(size_factor: float, offset_vec: Vector2):
-	for tile_num: int in money_nodes_by_tile.keys():
-		var coin: Sprite2D = money_nodes_by_tile[tile_num]
-		if tile_map.has(tile_num):
-			# Center coin + vertical adjustment to match players
-			var center_offset = Vector2(TILE_SIZE.x * 0.5, TILE_SIZE.y * 0.5 - 6)
-			coin.global_position = tile_map[tile_num] + center_offset
-		coin.scale = Vector2.ONE * size_factor
-
-func spawn_money_tiles(count: int = 5) -> void:
-	clear_money_tiles()
-	
-	# BUILD blocked_tiles from ALL snake/ladders
-	var temp_blocked: Array[int] = []
-	
-	# Snakes: heads + tails
-	for head in snake_map.keys():
-		temp_blocked.append(head)
-		temp_blocked.append(snake_map[head])
-	
-	# Ladders: bottoms + tops  
-	for bottom in ladder_map.keys():
-		temp_blocked.append(bottom)
-		temp_blocked.append(ladder_map[bottom])
-	
-	# Remove duplicates manually
-	blocked_tiles.clear()
-	for tile in temp_blocked:
-		if not blocked_tiles.has(tile):
-			blocked_tiles.append(tile)
-	
-	# Add start/finish
-	if not blocked_tiles.has(1): blocked_tiles.append(1)
-	if not blocked_tiles.has(100): blocked_tiles.append(100)
-	blocked_tiles.sort()
-	
-	# Safe tiles only
-	var available_tiles: Array[int] = []
-	for tile_num: int in range(2, 100):
-		if not blocked_tiles.has(tile_num):
-			available_tiles.append(tile_num)
-	
-	available_tiles.shuffle()
-	money_tiles_positions = available_tiles.slice(0, count)
-	
-	for tile_num in money_tiles_positions:
-		var tile_coords: Vector2i = number_to_tile(tile_num)
-		moneylayer.set_cell(tile_coords, MONEY_SOURCE_ID, MONEY_ATLAS_COORD)
-	
-	print("🚫 Blocked: ", blocked_tiles.size(), " | 💰 Safe: ", money_tiles_positions)
-
-
-func clear_money_tiles() -> void:
-	moneylayer.clear()
-	money_tiles_positions.clear()
-# Check player collection
-func check_for_money_collection(player_color: String) -> void:
-	var current_tile: int = player_positions[player_color]
-	
-	if current_tile in money_tiles_positions:
-		player_money[player_color] += money_value
-		money_tiles_positions.erase(current_tile)
-		
-		# Remove from TileMapLayer instantly
-		var tile_coords: Vector2i = number_to_tile(current_tile)
-		moneylayer.set_cell(tile_coords, -1)  # -1 = empty
-		
-		rollresult.text = player_color + " collected $" + str(money_value) + "!"
-		refresh_money_label()
-		print(player_color, " collected money at tile ", current_tile)
-
-
-func get_tile_number_from_coords(cell: Vector2i) -> int:
-	return cell.x + cell.y * 10
-
-func get_offset_if_needed(tile_num: int, color: String) -> Vector2:
-	var center = Vector2(TILE_SIZE.x * 0.5, TILE_SIZE.y * 0.5)  # (24, 24)
-	
-	# Move ALL players up 6 pixels for visual centering
-	var vertical_adjust = Vector2(0, -6)
-	
-	var color_offsets = {
-		"R": Vector2(-4, -4),
-		"G": Vector2(4, -4), 
-		"B": Vector2(-4, 4),
-		"Y": Vector2(4, 4)
-	}
-	
-	return center + vertical_adjust + color_offsets.get(color, Vector2.ZERO)
-
-
-
+"""=====================================================UI/BUTTONS TOGGLES======================================================================"""
+#region UI TOGGLES/BUTTONS
 # UI toggles
 func _on_showpowercardsbutton_pressed() -> void:
 	handpanel.visible = !handpanel.visible
@@ -2551,87 +2604,39 @@ func _on_showshopbutton_pressed() -> void:
 
 func _on_permanentcardstogglebutton_pressed() -> void:
 	permpanel.visible = !permpanel.visible
+func _on_backtomenubutton_pressed():
+	var explicit_path := "res://scenes/menuscene.tscn"
+	print("Back to Menu pressed -> trying to change to:", explicit_path)
+	if FileAccess.file_exists(explicit_path):
+		get_tree().change_scene_to_file(explicit_path)
+	else:
+		push_warning("Victory popup: menu scene not found at %s" % explicit_path)
+func _on_shared_toggled(rows_container: Node, pressed: bool) -> void:
+	# toggle visibility of per-row level selectors
+	var idx := 0
+	for row in rows_container.get_children():
+		var level_node_name = "ai_level_%d" % idx
+		var lvl_node = row.get_node_or_null(level_node_name)
+		if lvl_node:
+			lvl_node.visible = not pressed
+		idx += 1
+func show_victory_panel(message: String) -> void:
+	victory_label.text = message
+	victory_panel.visible = true
+	victory_panel.set_process_input(true)  # block clicks behind it
+	victory_panel.grab_focus()             # focus the button/label
 
-# debug helpers
-var _debug_click_point: Vector2 = Vector2(-10000, -10000)
-func _input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var screen_pos: Vector2 = event.position
-		var world_pos: Vector2 = get_global_mouse_position()
-		
-		# Dictionary nearest tile lookup (unchanged)
-		var nearest_tile: int = -1
-		var min_dist: float = INF
-		for key in tile_map.keys():
-			var pos: Vector2 = tile_map[key] as Vector2  # Assuming tile_map[key] gives world center
-			var d: float = pos.distance_to(world_pos)
-			if d < min_dist:
-				min_dist = d
-				nearest_tile = int(key)
-		
-		var cell_info: String = "no-layer"
-		if tilemaplayer != null:
-			# FIXED: Convert world to local, then local_to_map
-			var local_pos: Vector2 = tilemaplayer.to_local(world_pos)
-			var cell: Vector2i = tilemaplayer.local_to_map(local_pos)
-			cell_info = "cell: " + str(cell)
-			print("[DEBUG_CLICK] world:", world_pos, " local:", local_pos, " cell:", cell)
-		
-		if nearest_tile != -1:
-			print("[DEBUG_CLICK] screen:", screen_pos, " world:", world_pos,
-				  " nearest_tile:", nearest_tile, " tile_pos:", tile_map[nearest_tile],
-				  " dist:", min_dist, " layer_cell:", cell_info)
-		else:
-			print("[DEBUG_CLICK] screen:", screen_pos, " nearest_tile: none", " layer_cell:", cell_info)
+#endregion
 
-# -------------------------------
-# AI helper implementations used above
-# -------------------------------
-func ai_play_random_card(color: String, rarity: String = "any") -> void:
-	if not player_hands.has(color):
-		return
 
-	var candidates := []
-	for i in range(player_hands[color].size()):
-		var cd = player_hands[color][i]
-		var r = String(cd.get("rarity", "common"))
-		if rarity == "any" or r == rarity or (rarity == "field" and r == "epic"):
-			candidates.append(i)
+"""================================================PERMS EFFECT FUNCS=============================================================="""
 
-	if candidates.is_empty():
-		log_debug("%s (AI) tried to play %s card but had none." % [color, rarity])
-		return
-
-	candidates.shuffle()
-	var idx = candidates[0]
-	var card_data = player_hands[color][idx]
-
-	# 🕒 Simulate AI "thinking" delay
-	log_debug("%s (AI) is thinking about playing a card..." % color)
-	await get_tree().create_timer(1.8).timeout
-
-	# Remove card from hand
-	player_hands[color].remove_at(idx)
-
-	# 🖐️ Update UI if AI’s hand is visible (for testing)
-	if get_current_player() == color:
-		refresh_hand_for_current_player()
-
-	# 🎭 Small delay before applying effect (like a card “animation”)
-	log_debug("%s (AI) decided to play: %s" % [color, card_data.get("name", "Unknown")])
-	await get_tree().create_timer(1.2).timeout
-
-	# ⚡ Actually apply effect now
-	apply_card_effect_by_name(color, card_data)
-
-	# ⏳ Optional: short cooldown before AI ends its turn (for readability)
-	await get_tree().create_timer(0.8).timeout
+#region PERM EFFECTS FUNCS
 
 
 func upgrade_dice(sides: int, color: String) -> void:
 	player_dice_sides[color] = sides
 	_perm_log("%s upgraded to a D%d permanently!" % [color, sides])
-
 
 func odd_space_move(amount: int, color: String) -> void:
 	var pos = player_positions[color]
@@ -2644,71 +2649,15 @@ func apply_fibonacci_synergy(color: String) -> void:
 	# Example: double next Fibonacci card effect
 	player_effects[color]["fibonacci_boost"] = true
 	_perm_log("%s gained Fibonacci Synergy (next Fibonacci card stronger)." % color)
+#endregion
 
-func ai_buy_card(color: String, rarity: String = "common") -> void:
-	var choices := []
-	for name in power_cards_db.keys():
-		var cd = power_cards_db[name]
-		if String(cd.get("rarity","common")) != rarity:
-			continue
-		var cost = int(cd.get("shop_cost",0))
-		if player_money.get(color,0) >= cost:
-			choices.append(cd.duplicate(true))
-	if choices.size() == 0:
-		log_debug("%s (AI) wanted to buy a %s card but couldn't afford/none available." % [color, rarity])
-		return
-	choices.shuffle()
-	var pick = choices[0]
-	var cost = int(pick.get("shop_cost",0))
-	player_money[color] -= cost
-	player_hands[color].append(pick)
-	if color == get_current_player():
-		refresh_hand_for_current_player()
-	refresh_money_label()
-	rollresult.text = "%s (AI) bought %s" % [color, String(pick.get("name","unknown"))]
-	log_debug("%s (AI) bought %s for $%d" % [color, String(pick.get("name","unknown")), cost])
-
-func ai_buy_permanent(color: String, rarity: String = "common") -> void:
-	var choices := []
-	for name in permanent_cards_db.keys():
-		var pd = permanent_cards_db[name]
-		if String(pd.get("rarity","common")) != rarity:
-			continue
-		var cost = int(pd.get("shop_cost",0))
-		if player_money.get(color,0) >= cost:
-			choices.append(pd.duplicate(true))
-	if choices.size() == 0:
-		log_debug("%s (AI) wanted to buy a %s permanent but couldn't afford/none available." % [color, rarity])
-		return
-	choices.shuffle()
-	var picked = choices[0]
-	player_money[color] -= int(picked.get("shop_cost",0))
-	player_permanents[color].append(picked)
-	apply_permanent_effect(picked, color)
-	refresh_permanent_panel_for_current_player()
-	refresh_money_label()
-	rollresult.text = "%s (AI) bought permanent %s" % [color, String(picked.get("name","unknown"))]
-	log_debug("%s (AI) bought permanent %s for $%d" % [color, String(picked.get("name","unknown")), int(picked.get("shop_cost",0))])
-func _check_victory_for_color(color: String) -> bool:
-	# returns true if this color has reached the finish and handled victory UI
-	if player_positions.get(color, 0) >= 100:
-		_on_player_wins(color)
-		return true
-	return false
-
-func _on_player_wins(color: String) -> void:
-	_perm_log("%s WINS the game!" % color)
-	show_victory_panel("%s won the game!" % color)
-
-func show_victory_panel(message: String) -> void:
-	victory_label.text = message
-	victory_panel.visible = true
-	victory_panel.set_process_input(true)  # block clicks behind it
-	victory_panel.grab_focus()             # focus the button/label
+"""================================================DEBUG FUNCTIONS AND RELATED=============================================================="""
+#region DEBUGS AND OTHER RELATED
 
 # --- DEBUG FUNCTIONS ---
 var snake_nodes_by_tile: Dictionary = {}
-
+# debug helpers
+var _debug_click_point: Vector2 = Vector2(-10000, -10000)
 func _draw_tile_debug() -> void:
 	var cols = max(BOARD_COLS, 1)
 	var rows = max(BOARD_ROWS, 1)
@@ -2731,21 +2680,6 @@ func _draw_tile_debug() -> void:
 			for j in range(rows):
 				var pos = Vector2(i * tile_w + tile_w/2, j * tile_h + tile_h/2)
 				draw_string(debug_font, pos, str(j * cols + i + 1))
-func _recalculate_tile_size() -> void:
-	var tilemap_layer = $TileMap/Tilemaplayerresized
-	var tile_set = tilemap_layer.tile_set
-	if tile_set == null:
-		TILE_SIZE = Vector2(48, 48)
-		return
-	
-	# Vector2i.tile_size * Vector2.scale → explicit Vector2 conversion
-	var base_tile_size: Vector2 = Vector2(tile_set.tile_size)  # Convert Vector2i → Vector2
-	var scale = tilemap_layer.scale
-	TILE_SIZE = base_tile_size * scale  # Now Vector2 × Vector2 = Vector2
-	
-	print("TileSet.tile_size: ", tile_set.tile_size)
-	print("Layer.scale: ", scale)
-	print("TILE_SIZE: ", TILE_SIZE)
 
 func debug_tile_sizes():
 	var base_tile_size = $TileMap/Tilemaplayerresized.cell_size  # or Vector2(64,64)
@@ -2753,11 +2687,16 @@ func debug_tile_sizes():
 	var tile_w = base_tile_size.x * scale.x
 	var tile_h = base_tile_size.y * scale.y
 	print("Tile size after scaling: ", tile_w, " x ", tile_h)
-
-func _on_backtomenubutton_pressed():
-	var explicit_path := "res://scenes/menuscene.tscn"
-	print("Back to Menu pressed -> trying to change to:", explicit_path)
-	if FileAccess.file_exists(explicit_path):
-		get_tree().change_scene_to_file(explicit_path)
-	else:
-		push_warning("Victory popup: menu scene not found at %s" % explicit_path)
+# Debug helper: prints the core AI/player state
+func _debug_print_ai_state(tag: String = "") -> void:
+	print("=== DEBUG AI STATE ", tag, " ===")
+	print("game_mode:", game_mode)
+	print("player_count:", player_count, " desired_player_count:", desired_player_count)
+	print("ai_setup:", ai_setup)
+	print("reserved_ai_colors:", reserved_ai_colors)
+	print("ai_level_by_color:", ai_level_by_color)
+	print("player_is_ai:", player_is_ai)
+	print("turn_order:", turn_order)
+	print("current_turn_index:", current_turn_index)
+	print("==============================")
+#endregion
