@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://cnt3lvhlw3tlf"]
+
+[ext_resource type="Script" uid="uid://ultxr1nlpa3f" path="res://spritecardscene.gd" id="1_ird3t"]
+[ext_resource type="Texture2D" uid="uid://b8trwtiwjkw82" path="res://assets/Placeholdercard.png" id="2_ird3t"]
+[ext_resource type="Texture2D" uid="uid://citubokt81q7q" path="res://assets/OATH_OF_MINTLESS_CART0.1.png" id="3_idgda"]
+[ext_resource type="Texture2D" uid="uid://bp077d2hio73w" path="res://assets/TRAMP_CART_0.4.png" id="4_ma7af"]
+
+[node name="Spritecardscene" type="Control" unique_id=1365293508]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_ird3t")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=198315449]
+position = Vector2(60, 90)
+texture = ExtResource("2_ird3t")
+
+[node name="OathOfMintlessCart0_1" type="Sprite2D" parent="." unique_id=117777276]
+visible = false
+position = Vector2(192, 90)
+texture = ExtResource("3_idgda")
+
+[node name="TrampCart0_4" type="Sprite2D" parent="." unique_id=293975159]
+visible = false
+position = Vector2(319.99997, 90)
+scale = Vector2(0.333, 0.333)
+texture = ExtResource("4_ma7af")
+
+[node name="Label" type="Label" parent="." unique_id=544439948]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 152.0
+offset_right = 104.0
+offset_bottom = 176.0
+theme_override_colors/font_color = Color(0.7397524, 0, 0.010700718, 1)
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Sellbutton" type="Button" parent="." unique_id=991680563]
+visible = false
+modulate = Color(10.092055, 0, 1.5395352, 1)
+layout_mode = 0
+offset_left = 96.0
+offset_right = 136.0
+offset_bottom = 16.0
+
+[node name="CostLabel" type="Label" parent="." unique_id=1155501385]
+layout_mode = 0
+offset_right = 48.0
+offset_bottom = 23.0
+theme_override_colors/font_color = Color(0.10384595, 0.8727137, 0, 1)
+autowrap_mode = 3
+
+[connection signal="pressed" from="Sellbutton" to="." method="_on_SellButton_pressed"]
