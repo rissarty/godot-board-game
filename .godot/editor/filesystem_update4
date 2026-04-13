@@ -1,7 +1,0 @@
-res://boardgameplayscene.gd
-res://boardgameplayscene.tscn
-res://prototyper.gd
-res://spritecardscene.gd
-res://spritecardscene.tscn
-res://addons/godot-git-plugin/git_plugin.gdextension
-res://Gds folder/ai_managerscene.gd
