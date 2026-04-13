@@ -1,0 +1,870 @@
+[gd_scene format=4 uid="uid://cewrglbkov8ef"]
+
+[ext_resource type="Script" uid="uid://hjbygatmwse0" path="res://boardgameplayscene.gd" id="1_argfh"]
+[ext_resource type="Texture2D" uid="uid://d22jaxbafg8b8" path="res://assets/pixil-frame-0_scaled_6x_pngcrushed.png" id="2_whvtt"]
+[ext_resource type="Texture2D" uid="uid://bpsrftwenoe4r" path="res://assets/New Piskel(5).png" id="3_dgayj"]
+[ext_resource type="Texture2D" uid="uid://b8o8wv6cgxwqf" path="res://assets/tileset_scaled_2x_pngcrushed.png" id="3_id3j5"]
+[ext_resource type="Texture2D" uid="uid://bguvc7pcpd7ws" path="res://assets/map(1).png" id="4_6t7ku"]
+[ext_resource type="Texture2D" uid="uid://fojpx4karg77" path="res://assets/Newboard0.1.png" id="4_27yr1"]
+[ext_resource type="Texture2D" uid="uid://cu1p3um87ky7n" path="res://assets/New Piskel(3).png" id="4_801q5"]
+[ext_resource type="Texture2D" uid="uid://capq8qj28cqt8" path="res://assets/snakespritessheet02.png" id="5_27yr1"]
+[ext_resource type="Texture2D" uid="uid://p2ihefcpparn" path="res://assets/New Piskel(1).png" id="5_ubj84"]
+[ext_resource type="Texture2D" uid="uid://dyvg46vxu2g0i" path="res://assets/Sprite-0001.png" id="5_ukf34"]
+[ext_resource type="Texture2D" uid="uid://b211s5nqohnf1" path="res://assets/Sprite-0001-Sheet.png" id="5_wjq3b"]
+[ext_resource type="Texture2D" uid="uid://d1ypjvwok5t4v" path="res://assets/New Piskel(2).png" id="6_s8inr"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wjq3b"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.37977344, 0.07279999, 0.91, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_wjq3b"]
+texture = ExtResource("3_id3j5")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+7:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+7:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qr4wp"]
+texture = ExtResource("4_6t7ku")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+8:0/0 = 0
+9:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+7:1/0 = 0
+8:1/0 = 0
+9:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+7:2/0 = 0
+8:2/0 = 0
+9:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+8:3/0 = 0
+9:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+8:4/0 = 0
+9:4/0 = 0
+0:5/0 = 0
+1:5/0 = 0
+2:5/0 = 0
+3:5/0 = 0
+4:5/0 = 0
+5:5/0 = 0
+6:5/0 = 0
+7:5/0 = 0
+8:5/0 = 0
+9:5/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_m64gg"]
+texture = ExtResource("4_27yr1")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+8:0/0 = 0
+9:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+7:1/0 = 0
+8:1/0 = 0
+9:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+7:2/0 = 0
+8:2/0 = 0
+9:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+8:3/0 = 0
+9:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+8:4/0 = 0
+9:4/0 = 0
+0:5/0 = 0
+1:5/0 = 0
+2:5/0 = 0
+3:5/0 = 0
+4:5/0 = 0
+5:5/0 = 0
+6:5/0 = 0
+7:5/0 = 0
+8:5/0 = 0
+9:5/0 = 0
+0:6/0 = 0
+1:6/0 = 0
+2:6/0 = 0
+3:6/0 = 0
+4:6/0 = 0
+5:6/0 = 0
+6:6/0 = 0
+7:6/0 = 0
+8:6/0 = 0
+9:6/0 = 0
+0:7/0 = 0
+1:7/0 = 0
+2:7/0 = 0
+3:7/0 = 0
+4:7/0 = 0
+5:7/0 = 0
+6:7/0 = 0
+7:7/0 = 0
+8:7/0 = 0
+9:7/0 = 0
+0:8/0 = 0
+1:8/0 = 0
+2:8/0 = 0
+3:8/0 = 0
+4:8/0 = 0
+5:8/0 = 0
+6:8/0 = 0
+7:8/0 = 0
+8:8/0 = 0
+9:8/0 = 0
+0:9/0 = 0
+1:9/0 = 0
+2:9/0 = 0
+3:9/0 = 0
+4:9/0 = 0
+5:9/0 = 0
+6:9/0 = 0
+7:9/0 = 0
+8:9/0 = 0
+9:9/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_6t7ku"]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_wjq3b")
+sources/1 = SubResource("TileSetAtlasSource_qr4wp")
+sources/2 = SubResource("TileSetAtlasSource_m64gg")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32ugl"]
+texture = ExtResource("5_wjq3b")
+texture_region_size = Vector2i(64, 64)
+1:0/0 = 0
+2:0/0 = 0
+4:0/0 = 0
+7:0/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+4:1/0 = 0
+7:1/0 = 0
+2:2/0 = 0
+4:2/0 = 0
+7:2/0 = 0
+4:3/0 = 0
+4:4/0 = 0
+1:7/0 = 0
+5:7/0 = 0
+6:7/0 = 0
+1:8/0 = 0
+5:8/0 = 0
+6:8/0 = 0
+7:8/0 = 0
+1:9/0 = 0
+6:9/0 = 0
+7:9/0 = 0
+1:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+2:5/0 = 0
+3:5/0 = 0
+4:5/0 = 0
+6:5/0 = 0
+7:5/0 = 0
+3:6/0 = 0
+4:6/0 = 0
+7:6/0 = 0
+8:6/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_j6pna"]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_32ugl")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_id3j5"]
+texture = ExtResource("5_wjq3b")
+texture_region_size = Vector2i(64, 64)
+1:0/0 = 0
+1:0/0/terrain_set = 0
+1:0/0/terrain = 1
+2:0/0 = 0
+2:0/0/terrain_set = 0
+2:0/0/terrain = 0
+4:0/0 = 0
+4:0/0/terrain_set = 0
+4:0/0/terrain = 1
+7:0/0 = 0
+7:0/0/terrain_set = 0
+7:0/0/terrain = 1
+1:1/0 = 0
+1:1/0/terrain_set = 0
+1:1/0/terrain = 0
+2:1/0 = 0
+2:1/0/terrain_set = 0
+2:1/0/terrain = 0
+4:1/0 = 0
+2:2/0 = 0
+2:2/0/terrain_set = 0
+2:2/0/terrain = 2
+4:2/0 = 0
+4:2/0/terrain_set = 0
+4:2/0/terrain = 0
+4:3/0 = 0
+4:3/0/terrain_set = 0
+4:3/0/terrain = 0
+4:4/0 = 0
+4:4/0/terrain_set = 0
+4:4/0/terrain = 2
+1:7/0 = 0
+5:7/0 = 0
+6:7/0 = 0
+1:8/0 = 0
+5:8/0 = 0
+6:8/0 = 0
+7:8/0 = 0
+1:9/0 = 0
+6:9/0 = 0
+7:9/0 = 0
+7:1/0 = 0
+7:1/0/terrain_set = 0
+7:1/0/terrain = 0
+7:2/0 = 0
+7:2/0/terrain_set = 0
+7:2/0/terrain = 2
+
+[sub_resource type="TileSet" id="TileSet_wjq3b"]
+tile_size = Vector2i(64, 64)
+terrain_set_0/mode = 0
+terrain_set_0/terrain_0/name = "Terrain 0 "
+terrain_set_0/terrain_0/color = Color(0.5, 0.34375, 0.25, 1)
+terrain_set_0/terrain_1/name = "Terrain 1"
+terrain_set_0/terrain_1/color = Color(0.061599992, 0.29347998, 0.88, 1)
+terrain_set_0/terrain_2/name = "Terrain 2"
+terrain_set_0/terrain_2/color = Color(0.46875, 0.5, 0.25, 1)
+sources/0 = SubResource("TileSetAtlasSource_id3j5")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_j6pna"]
+texture = ExtResource("5_27yr1")
+texture_region_size = Vector2i(64, 64)
+4:1/0 = 0
+7:1/0 = 0
+4:2/0 = 0
+7:2/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:5/0 = 0
+8:6/0 = 0
+5:7/0 = 0
+7:9/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+4:0/0 = 0
+7:0/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+2:2/0 = 0
+1:3/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+2:5/0 = 0
+3:5/0 = 0
+4:5/0 = 0
+6:5/0 = 0
+3:6/0 = 0
+4:6/0 = 0
+5:6/0 = 0
+7:6/0 = 0
+1:7/0 = 0
+6:7/0 = 0
+1:8/0 = 0
+6:8/0 = 0
+7:8/0 = 0
+1:9/0 = 0
+8:9/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_qr4wp"]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_j6pna")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6t7ku"]
+texture = ExtResource("5_27yr1")
+texture_region_size = Vector2i(64, 64)
+1:0/0 = 0
+2:0/0 = 0
+4:0/0 = 0
+7:0/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+4:1/0 = 0
+7:1/0 = 0
+2:2/0 = 0
+4:2/0 = 0
+7:2/0 = 0
+1:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+2:5/0 = 0
+3:5/0 = 0
+4:5/0 = 0
+6:5/0 = 0
+7:5/0 = 0
+3:6/0 = 0
+4:6/0 = 0
+5:6/0 = 0
+7:6/0 = 0
+8:6/0 = 0
+1:7/0 = 0
+5:7/0 = 0
+6:7/0 = 0
+1:8/0 = 0
+6:8/0 = 0
+7:8/0 = 0
+1:9/0 = 0
+7:9/0 = 0
+8:9/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_27yr1"]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_6t7ku")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_27yr1"]
+texture = ExtResource("5_ukf34")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+9:0/0 = 0
+10:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+7:1/0 = 0
+8:1/0 = 0
+9:1/0 = 0
+10:1/0 = 0
+11:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+7:2/0 = 0
+8:2/0 = 0
+9:2/0 = 0
+10:2/0 = 0
+11:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+9:3/0 = 0
+10:3/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_32ugl"]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_27yr1")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6t7ku"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.15294118, 0, 0.36862746, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m64gg"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.20392157, 0.011764706, 0.85882354, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1ihpm"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.11372549, 0.6509804, 0.047058824, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="Boardgameplayscene" type="Node2D" unique_id=881869912]
+script = ExtResource("1_argfh")
+metadata/_edit_horizontal_guides_ = [0.0, 184.0]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=680898718]
+
+[node name="Victorypanel" type="Panel" parent="CanvasLayer" unique_id=963701002]
+visible = false
+z_index = 200
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_top = 312.0
+offset_right = 232.0
+offset_bottom = 504.0
+grow_horizontal = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_wjq3b")
+metadata/_edit_use_anchors_ = true
+
+[node name="victorylabel" type="Label" parent="CanvasLayer/Victorypanel" unique_id=91676915]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 104.0
+offset_right = -104.0
+offset_bottom = 23.0
+grow_horizontal = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Backtomenubutton" type="Button" parent="CanvasLayer/Victorypanel" unique_id=805196020]
+modulate = Color(1.0187511, 0.106826015, 0.041694704, 1)
+layout_mode = 0
+offset_left = 160.0
+offset_top = 64.0
+offset_right = 352.0
+offset_bottom = 128.0
+text = "Back To Menu"
+metadata/_edit_use_anchors_ = true
+
+[node name="TileMap" type="TileMap" parent="." unique_id=1199227108]
+position = Vector2(0, 8)
+format = 2
+
+[node name="Tilemaplayerresized" type="TileMapLayer" parent="TileMap" unique_id=548513160]
+z_index = -3
+position = Vector2(960, 592)
+scale = Vector2(0.755, 0.755)
+tile_map_data = PackedByteArray("AADz/wAAAgAAAAkAAAD0/wAAAgABAAkAAAD1/wAAAgACAAkAAAD2/wAAAgADAAkAAAD3/wAAAgAEAAkAAAD4/wAAAgAFAAkAAAD5/wAAAgAGAAkAAAD6/wAAAgAHAAkAAAD7/wAAAgAIAAkAAAD8/wAAAgAJAAkAAAD8////AgAJAAgAAAD7////AgAIAAgAAAD6////AgAHAAgAAAD5////AgAGAAgAAAD4////AgAFAAgAAAD3////AgAEAAgAAAD2////AgADAAgAAAD1////AgACAAgAAAD0////AgABAAgAAADz////AgAAAAgAAADz//7/AgAAAAcAAAD0//7/AgABAAcAAAD1//7/AgACAAcAAAD2//7/AgADAAcAAAD3//7/AgAEAAcAAAD4//7/AgAFAAcAAAD5//7/AgAGAAcAAAD6//7/AgAHAAcAAAD7//7/AgAIAAcAAAD8//7/AgAJAAcAAAD8//3/AgAJAAYAAAD7//3/AgAIAAYAAAD6//3/AgAHAAYAAAD5//3/AgAGAAYAAAD4//3/AgAFAAYAAAD3//3/AgAEAAYAAAD2//3/AgADAAYAAADz//3/AgAAAAYAAAD1//3/AgACAAYAAAD0//3/AgABAAYAAADz//f/AgAAAAAAAADz//j/AgAAAAEAAADz//n/AgAAAAIAAADz//r/AgAAAAMAAADz//v/AgAAAAQAAADz//z/AgAAAAUAAAD0//f/AgABAAAAAAD0//j/AgABAAEAAAD0//n/AgABAAIAAAD0//r/AgABAAMAAAD0//v/AgABAAQAAAD0//z/AgABAAUAAAD1//f/AgACAAAAAAD1//j/AgACAAEAAAD1//n/AgACAAIAAAD1//r/AgACAAMAAAD1//v/AgACAAQAAAD1//z/AgACAAUAAAD2//f/AgADAAAAAAD2//j/AgADAAEAAAD2//n/AgADAAIAAAD2//r/AgADAAMAAAD2//v/AgADAAQAAAD2//z/AgADAAUAAAD3//f/AgAEAAAAAAD3//j/AgAEAAEAAAD3//n/AgAEAAIAAAD3//r/AgAEAAMAAAD3//v/AgAEAAQAAAD3//z/AgAEAAUAAAD4//f/AgAFAAAAAAD4//j/AgAFAAEAAAD4//n/AgAFAAIAAAD4//r/AgAFAAMAAAD4//v/AgAFAAQAAAD4//z/AgAFAAUAAAD5//f/AgAGAAAAAAD5//j/AgAGAAEAAAD5//n/AgAGAAIAAAD5//r/AgAGAAMAAAD5//v/AgAGAAQAAAD5//z/AgAGAAUAAAD6//f/AgAHAAAAAAD6//j/AgAHAAEAAAD6//n/AgAHAAIAAAD6//r/AgAHAAMAAAD6//v/AgAHAAQAAAD6//z/AgAHAAUAAAD7//f/AgAIAAAAAAD7//j/AgAIAAEAAAD7//n/AgAIAAIAAAD7//r/AgAIAAMAAAD7//v/AgAIAAQAAAD7//z/AgAIAAUAAAD8//f/AgAJAAAAAAD8//j/AgAJAAEAAAD8//n/AgAJAAIAAAD8//r/AgAJAAMAAAD8//v/AgAJAAQAAAD8//z/AgAJAAUAAAA=")
+tile_set = SubResource("TileSet_6t7ku")
+
+[node name="Diagsnakelayer" type="TileMapLayer" parent="TileMap" unique_id=2145942747]
+z_index = 25
+position = Vector2(960, 592)
+scale = Vector2(0.755, 0.755)
+tile_set = SubResource("TileSet_j6pna")
+
+[node name="Snaketilelayer" type="TileMapLayer" parent="TileMap" unique_id=2087066523]
+z_index = 20
+position = Vector2(960.00006, 592)
+scale = Vector2(0.75, 0.75)
+tile_set = SubResource("TileSet_wjq3b")
+
+[node name="Diagladdermap" type="TileMapLayer" parent="TileMap" unique_id=862285736]
+position = Vector2(960, 592)
+scale = Vector2(0.75, 0.75)
+tile_set = SubResource("TileSet_qr4wp")
+
+[node name="LadderTileLayer" type="TileMapLayer" parent="TileMap" unique_id=1467671321]
+z_index = 21
+position = Vector2(960, 592)
+scale = Vector2(0.75, 0.75)
+tile_set = SubResource("TileSet_27yr1")
+
+[node name="moneylayer" type="TileMapLayer" parent="TileMap" unique_id=496748720]
+z_index = 190
+position = Vector2(960, 592)
+scale = Vector2(0.75, 0.75)
+tile_set = SubResource("TileSet_32ugl")
+
+[node name="rollresult" type="Label" parent="." unique_id=1924797645]
+offset_left = 960.0
+offset_top = 216.0
+offset_right = 1152.0
+offset_bottom = 248.0
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="MoneyLabel" type="Label" parent="." unique_id=798247916]
+offset_top = 192.0
+offset_right = 128.0
+offset_bottom = 256.0
+size_flags_horizontal = 3
+size_flags_vertical = 6
+theme_override_font_sizes/font_size = 30
+text = "$"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="playerYELLOW" type="Sprite2D" parent="." unique_id=1500785089]
+z_index = 200
+position = Vector2(360, 624)
+scale = Vector2(0.32, 0.32)
+texture = ExtResource("3_dgayj")
+
+[node name="playerRED" type="Sprite2D" parent="." unique_id=1381625924]
+z_index = 200
+position = Vector2(364.48, 636.48)
+scale = Vector2(0.32, 0.32)
+texture = ExtResource("4_801q5")
+
+[node name="playerBLUE" type="Sprite2D" parent="." unique_id=323525422]
+z_index = 200
+position = Vector2(348.48, 620.48)
+scale = Vector2(0.32, 0.32)
+texture = ExtResource("5_ubj84")
+
+[node name="player1spriteGreen" type="Sprite2D" parent="." unique_id=785451530]
+z_index = 200
+position = Vector2(348.48, 636.48004)
+scale = Vector2(0.32, 0.32)
+texture = ExtResource("6_s8inr")
+
+[node name="Moneytilesprite" type="Sprite2D" parent="." unique_id=652287436]
+visible = false
+position = Vector2(380, 620)
+scale = Vector2(0.416667, 0.416667)
+texture = ExtResource("2_whvtt")
+
+[node name="dicerollbutton" type="Button" parent="." unique_id=219091320]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 1024.0
+offset_top = 256.0
+offset_right = 1152.0
+offset_bottom = 320.0
+grow_horizontal = 2
+text = "dice roll"
+metadata/_edit_use_anchors_ = true
+
+[node name="showpowercardsbutton" type="Button" parent="." unique_id=2124815630]
+offset_left = 1024.0
+offset_top = 448.0
+offset_right = 1149.0
+offset_bottom = 512.0
+text = "show hand"
+metadata/_edit_use_anchors_ = true
+
+[node name="Showshopbutton" type="Button" parent="." unique_id=982524041]
+offset_left = 1088.0
+offset_top = 360.0
+offset_right = 1152.0
+offset_bottom = 408.0
+text = "shop"
+metadata/_edit_use_anchors_ = true
+
+[node name="permanentcardstogglebutton" type="Button" parent="." unique_id=506142062]
+offset_left = 1048.0
+offset_top = 64.0
+offset_right = 1151.0
+offset_bottom = 128.0
+text = "permenents"
+metadata/_edit_use_anchors_ = true
+
+[node name="debuglabel" type="Label" parent="." unique_id=1030782281]
+visible = false
+offset_right = 416.0
+offset_bottom = 64.0
+autowrap_mode = 3
+
+[node name="Label" type="Label" parent="." unique_id=1421891577]
+offset_left = 16.0
+offset_top = 424.0
+offset_right = 304.0
+offset_bottom = 629.0
+text = "How To Play:
+Reach 100 by rolling the dice
+
+use \"PowerCards\" in your \"Hand\" for Bonus and power ups.
+
+Use Permanents For Passive Bonuses and power ups"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1176996233]
+
+[node name="HandPanel" type="Panel" parent="UI" unique_id=1812159215]
+visible = false
+offset_left = 512.0
+offset_top = 448.0
+offset_right = 992.0
+offset_bottom = 640.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_6t7ku")
+
+[node name="cardhancontainer" type="Control" parent="UI/HandPanel" unique_id=1244765385]
+anchors_preset = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 472.0
+offset_bottom = 176.0
+mouse_filter = 2
+
+[node name="Shoppanel" type="Panel" parent="UI" unique_id=131696236]
+visible = false
+offset_left = 272.0
+offset_top = 88.0
+offset_right = 944.0
+offset_bottom = 392.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_m64gg")
+metadata/_edit_use_anchors_ = true
+
+[node name="Shopcontainer1" type="HBoxContainer" parent="UI/Shoppanel" unique_id=1851499587]
+layout_mode = 0
+offset_left = 240.0
+offset_right = 672.0
+offset_bottom = 168.0
+metadata/_edit_use_anchors_ = true
+
+[node name="permshopcontainer" type="HBoxContainer" parent="UI/Shoppanel" unique_id=98304589]
+layout_mode = 0
+offset_right = 240.0
+offset_bottom = 168.0
+metadata/_edit_use_anchors_ = true
+
+[node name="PermanentPanel" type="Panel" parent="UI" unique_id=425726880]
+visible = false
+offset_left = 320.0
+offset_right = 896.0
+offset_bottom = 168.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1ihpm")
+
+[node name="permContainer" type="HBoxContainer" parent="UI/PermanentPanel" unique_id=687396747]
+clip_contents = true
+custom_minimum_size = Vector2(120, 160)
+layout_direction = 1
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_right = 280.0
+offset_bottom = 168.0
+grow_horizontal = 2
+
+[node name="playerswapPanel" type="Panel" parent="UI" unique_id=1684372745]
+visible = false
+offset_left = 480.0
+offset_top = 192.0
+offset_right = 736.0
+offset_bottom = 512.0
+
+[node name="swapnamecontainer" type="VBoxContainer" parent="UI/playerswapPanel" unique_id=776580526]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 248.0
+offset_bottom = 312.0
+
+[node name="colourchoicePanel" type="Panel" parent="UI" unique_id=170829274]
+visible = false
+offset_left = 544.0
+offset_top = 192.0
+offset_right = 672.0
+offset_bottom = 448.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="choosebuttoncontainer" type="VBoxContainer" parent="UI/colourchoicePanel" unique_id=704243838]
+layout_mode = 0
+offset_right = 128.0
+offset_bottom = 256.0
+alignment = 1
+
+[node name="chooseRed" type="Button" parent="UI/colourchoicePanel/choosebuttoncontainer" unique_id=42673721]
+layout_mode = 2
+size_flags_vertical = 3
+text = "red"
+
+[node name="chooseGreen" type="Button" parent="UI/colourchoicePanel/choosebuttoncontainer" unique_id=1937280270]
+layout_mode = 2
+size_flags_vertical = 3
+text = "green"
+
+[node name="chooseBlue" type="Button" parent="UI/colourchoicePanel/choosebuttoncontainer" unique_id=831142746]
+layout_mode = 2
+size_flags_vertical = 3
+text = "blue"
+
+[node name="chooseYellow" type="Button" parent="UI/colourchoicePanel/choosebuttoncontainer" unique_id=1069410958]
+layout_mode = 2
+size_flags_vertical = 3
+text = "yellow"
+
+[node name="Panel" type="Panel" parent="UI" unique_id=1151087066]
+visible = false
+offset_top = 448.0
+offset_right = 128.0
+offset_bottom = 640.0
+
+[node name="aibuttonscontainer" type="VBoxContainer" parent="UI/Panel" unique_id=1956575673]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Button" type="Button" parent="UI/Panel/aibuttonscontainer" unique_id=1928938455]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Button2" type="Button" parent="UI/Panel/aibuttonscontainer" unique_id=257467435]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Button3" type="Button" parent="UI/Panel/aibuttonscontainer" unique_id=1220808569]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Button4" type="Button" parent="UI/Panel/aibuttonscontainer" unique_id=1424080982]
+layout_mode = 2
+size_flags_vertical = 3
+text = "START"
+
+[connection signal="pressed" from="CanvasLayer/Victorypanel/Backtomenubutton" to="." method="_on_backtomenubutton_pressed"]
+[connection signal="pressed" from="dicerollbutton" to="." method="_on_dicerollbutton_pressed"]
+[connection signal="pressed" from="showpowercardsbutton" to="." method="_on_showpowercardsbutton_pressed"]
+[connection signal="pressed" from="Showshopbutton" to="." method="_on_showshopbutton_pressed"]
+[connection signal="pressed" from="permanentcardstogglebutton" to="." method="_on_permanentcardstogglebutton_pressed"]

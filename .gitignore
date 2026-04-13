@@ -1,0 +1,27 @@
+# Godot
+.import/
+.export/
+export.cfg
+
+# Temp files
+*.tmp
+
+# Builds
+
+# Archives
+*.zip
+
+# VS Code
+.vscode/
+# Android / Gradle build outputs
+android/build/
+android/.gradle/
+*.aar
+*.apk
+*.aab
+
+# Godot Android export builds (if any)
+android/export/
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,167 @@
+[gd_scene load_steps=2 format=3 uid="uid://b0j37tryj7xv2"]
+
+[ext_resource type="Script" uid="uid://b67ssjkeacyv8" path="res://Gds folder/menuscene.gd" id="1_3u78x"]
+
+[node name="menuscene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_3u78x")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 640.0
+
+[node name="Playbutton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -68.0
+offset_right = 128.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "play"
+
+[node name="playercountpanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -192.0
+offset_right = 128.0
+offset_bottom = 192.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="countbuttoncontainer" type="VBoxContainer" parent="playercountpanel"]
+clip_contents = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -76.0
+offset_top = -132.0
+offset_right = 76.0
+offset_bottom = 124.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="_2playerbutton" type="Button" parent="playercountpanel/countbuttoncontainer"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "VS. 1 Player"
+
+[node name="_3playerbutton" type="Button" parent="playercountpanel/countbuttoncontainer"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "VS. 2 Players"
+
+[node name="_4playerbutton" type="Button" parent="playercountpanel/countbuttoncontainer"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "VS. 3 Players"
+
+[node name="Panel2" type="Panel" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 256.0
+offset_top = 128.0
+offset_right = 896.0
+offset_bottom = 512.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel2"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 632.0
+offset_bottom = 376.0
+theme_override_constants/separation = 35
+alignment = 1
+
+[node name="vsAIbutton" type="Button" parent="Panel2/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "vs Ai "
+
+[node name="Passandplaybutton" type="Button" parent="Panel2/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Pass and play"
+
+[node name="Aisetuppanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -260.0
+offset_right = 128.0
+offset_bottom = 252.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContaineraibox" type="VBoxContainer" parent="Aisetuppanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Labelai1" type="Label" parent="Aisetuppanel/VBoxContaineraibox"]
+layout_mode = 2
+text = "AI 1 COLOUR"
+
+[node name="Buttoncolour1" type="OptionButton" parent="Aisetuppanel/VBoxContaineraibox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label2" type="Label" parent="Aisetuppanel/VBoxContaineraibox"]
+layout_mode = 2
+text = "AI 2 COLOUR"
+
+[node name="Button2" type="OptionButton" parent="Aisetuppanel/VBoxContaineraibox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label3" type="Label" parent="Aisetuppanel/VBoxContaineraibox"]
+layout_mode = 2
+size_flags_vertical = 1
+text = "AI 3 COLOUR"
+
+[node name="Button3" type="OptionButton" parent="Aisetuppanel/VBoxContaineraibox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label4" type="Label" parent="Aisetuppanel/VBoxContaineraibox"]
+layout_mode = 2
+text = "AI DIFFICULTY LEVEL SELECTION"
+
+[node name="Button4" type="OptionButton" parent="Aisetuppanel/VBoxContaineraibox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Button5" type="Button" parent="Aisetuppanel/VBoxContaineraibox"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "START"

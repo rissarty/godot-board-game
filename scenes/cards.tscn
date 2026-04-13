@@ -1,0 +1,74 @@
+[gd_scene load_steps=2 format=3 uid="uid://be6f6w0swscsw"]
+
+[ext_resource type="Script" uid="uid://bo6njscy3qwtq" path="res://Gds folder/cards.gd" id="1_cqxa1"]
+
+[node name="cards" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cqxa1")
+card_width = null
+card_height = null
+art_path = null
+
+[node name="Background" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -68.0
+offset_right = 127.0
+offset_bottom = 198.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.671728, 0.481396)
+
+[node name="CardButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 512.0
+offset_top = 256.0
+offset_right = 640.0
+offset_bottom = 384.0
+
+[node name="EffectLabel" type="Label" parent="CardButton"]
+modulate = Color(0.458824, 1, 1, 1)
+layout_mode = 0
+offset_top = 48.0
+offset_right = 128.0
+offset_bottom = 128.0
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="CostLabel" type="Label" parent="CardButton"]
+layout_mode = 0
+offset_left = 96.0
+offset_top = -8.0
+offset_right = 136.0
+offset_bottom = 15.0
+
+[node name="NameLabel" type="Label" parent="CardButton"]
+layout_mode = 0
+offset_right = 104.0
+offset_bottom = 23.0
+
+[node name="Sellbutton" type="Button" parent="CardButton"]
+layout_mode = 0
+offset_left = 112.0
+offset_top = 15.0
+offset_right = 152.0
+offset_bottom = 39.0
+
+[node name="TextureRect" type="TextureRect" parent="CardButton"]
+layout_mode = 0
+offset_right = 128.0
+offset_bottom = 128.0
+
+[connection signal="pressed" from="CardButton/Sellbutton" to="." method="_on_sellbutton_pressed"]

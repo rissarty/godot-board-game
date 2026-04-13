@@ -1,0 +1,15 @@
+ea4bc82a6ad023ab7ee23ee620429895
+::res://::1755763443
+boardgameplayscene.gd::GDScript::-1::1755599556::0::1::::<>Node2D<>::
+boardgameplayscene.tscn::PackedScene::5100056535943688601::1755685563::0::1::::<><>::res://boardgameplayscene.gd<>uid://78huw7a2khwj::::res://New Piskel(5).png<>uid://durke22mha7e7::::res://snake_ladders_tilemap_640.png<>uid://crqk6rrxj8xw8::::res://New Piskel(3).png<>uid://cgpadp1bb6fr6::::res://New Piskel(1).png<>uid://c1rlcahml2g3k::::res://New Piskel(2).png
+canvas-image.png::CompressedTexture2D::894513188288712264::1754207662::1754207662::1::::<><>::
+cards.gd::GDScript::-1::1755016968::0::1::::PowerCard<>Control<>::
+cards.tscn::PackedScene::2731531908177728754::1755685563::0::1::::<><>::res://cards.gd
+icon.svg::CompressedTexture2D::4326987841384166324::1754042669::1754042675::1::::<><>::
+menuscene.gd::GDScript::-1::1755597157::0::1::::<>Control<>::
+menuscene.tscn::PackedScene::14110539332488806::1755685564::0::1::::<><>::res://menuscene.gd
+New Piskel(1).png::CompressedTexture2D::5224946280970171293::1754477345::1754477346::1::::<><>::
+New Piskel(2).png::CompressedTexture2D::6633517193676925986::1754477564::1754477564::1::::<><>::
+New Piskel(3).png::CompressedTexture2D::5999745203053419169::1754477717::1754477717::1::::<><>::
+New Piskel(5).png::CompressedTexture2D::2314629402112399505::1754477956::1754477957::1::::<><>::
+snake_ladders_tilemap_640.png::CompressedTexture2D::8598749119157040984::1754226405::1754226406::1::::<><>::
