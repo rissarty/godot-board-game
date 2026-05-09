@@ -47,4 +47,3 @@ marx - evens the money out between all players
 Rumik- gives +1 perm slot 
 
 Towers - chance to get a plane to teleport to a random tile withon 15 tile radius, with a 75% chance to crash it and lose all the cards in hand. 
-
