@@ -710,16 +710,18 @@ offset_bottom = 64.0
 autowrap_mode = 3
 
 [node name="Label" type="Label" parent="." unique_id=1421891577]
-offset_left = 16.0
-offset_top = 424.0
-offset_right = 304.0
-offset_bottom = 629.0
+offset_left = 8.0
+offset_top = 386.0
+offset_right = 296.0
+offset_bottom = 643.0
 text = "How To Play:
 Reach 100 by rolling the dice
 
 use \"PowerCards\" in your \"Hand\" for Bonus and power ups.
 
-Use Permanents For Passive Bonuses and power ups"
+Use Permanents For Passive Bonuses and power ups
+
+Use $ for buying cards from \"Shop\""
 horizontal_alignment = 1
 autowrap_mode = 3
 
