@@ -396,6 +396,8 @@ const DIAGONAL_SKELETONS: Array = [
 	[93,89,71],
 	[81,79,63,57,45,35,27,13,9]
 ]
+var used_diag_snake_regions := {}
+var used_diag_ladder_regions := {}
 #endregion
 """===============================================LADDER CONSTS==============================================================="""
 #region LADDER VARS REGION
@@ -432,7 +434,41 @@ const LADDER_COLUMN_PATHS: Array = [
 	# Column 10: 10 up to 90
 	[10, 11, 30, 31, 50, 51, 70, 71, 90]
 ]
+const REGION_TILES = {
+	"TOP_LEFT": [
+		100,99,98,97,96,
+		81,82,83,84,85,
+		80,79,78,77,76,
+		61,62,63,64,65,
+		60,59,58,57,56
+	],
 
+	"TOP_RIGHT": [
+		95,94,93,92,91,
+		86,87,88,89,90,
+		75,74,73,72,71,
+		66,67,68,69,70,
+		55,54,53,52,51
+	],
+
+	"BOTTOM_RIGHT": [
+		46,47,48,49,50,
+		35,34,33,32,31,
+		26,27,28,29,30,
+		15,14,13,12,11,
+		6,7,8,9,10
+	],
+
+	"BOTTOM_LEFT": [
+		41,42,43,44,45,
+		40,39,38,37,36,
+		21,22,23,24,25,
+		20,19,18,17,16,
+		1,2,3,4,5
+	]
+}
+var used_snake_regions := {}
+var used_ladder_regions := {}
 #endregion
 """===============================================EXTRA FUNCS AND DEBUGS BEFORE READY==========================================="""
 #region EXTRA FUNCS AND DEBUGS BEFORE READY
@@ -561,41 +597,137 @@ func check_snake_or_ladder(tile_num: int) -> int:
 
 """===============================================SNAKE GEN CODE============================================================================"""
 #region SNAKE GEN CODE
+# =========================================================
+# HELPERS
+# =========================================================
+func get_region_from_head(tile_num: int) -> String:
+
+	for region in REGION_TILES:
+
+		if REGION_TILES[region].has(tile_num):
+			return region
+
+	return "UNKNOWN"
+
+func get_board_region(tile_num: int) -> String:
+
+	var pos = number_to_tile(tile_num)
+
+	# TOP LEFT
+	if pos.x < 5 and pos.y < 5:
+		return "TOP_LEFT"
+
+	# TOP RIGHT
+	elif pos.x >= 5 and pos.y < 5:
+		return "TOP_RIGHT"
+
+	# BOTTOM LEFT
+	elif pos.x < 5 and pos.y >= 5:
+		return "BOTTOM_LEFT"
+
+	# BOTTOM RIGHT
+	else:
+		return "BOTTOM_RIGHT"
+func make_diag_snake_data(path_pos: Array, mirrored: bool = false) -> Dictionary:
+	return {
+		"path": path_pos,
+		"mirrored": mirrored
+	}
+
+
+func get_diag_path(data: Dictionary) -> Array:
+	return data.get("path", [])
+
+
+func is_diag_mirrored(data: Dictionary) -> bool:
+	return data.get("mirrored", false)
+
 func generate_snakes(count: int):
+
+	used_snake_regions.clear()
+
 	used_cells.clear()
+
 	var placed = 0
 	var total_attempts = 0
-	var max_total = count * 50  # Safety limit
-	
+	var max_total = count * 50
+
 	while placed < count and total_attempts < max_total:
+
 		total_attempts += 1
-		
+
 		var col_list = COLUMN_PATHS[randi() % 10]
+
 		var start_idx = randi_range(0, col_list.size() - 3)
-		var length = randi_range(3, col_list.size() - start_idx)
-		
-		var path_nums = col_list.slice(start_idx, start_idx + length)
+
+		var length = randi_range(
+			3,
+			col_list.size() - start_idx
+		)
+
+		var path_nums = col_list.slice(
+			start_idx,
+			start_idx + length
+		)
+
+		# REGION FROM HEAD
+		var region = get_region_from_head(path_nums[0])
+
+		# ONLY ONE STRAIGHT SNAKE PER REGION
+		if used_snake_regions.has(region):
+			continue
+
 		var path_pos = path_nums.map(number_to_tile)
-		
+
 		if is_valid_snake(path_pos):
-			add_snake_to_board(path_pos,false)
+
+			add_snake_to_board(path_pos, false)
+
+			used_snake_regions[region] = true
+
 			placed += 1
-			print("✓ Snake ", placed, ": ", path_nums)
+
+			print(
+				"✓ Snake ",
+				placed,
+				": ",
+				path_nums,
+				" region=",
+				region
+			)
+
 		else:
 			print("✗ Collision, retrying...")
-	
-	print("Generated ", placed, "/", count, " snakes in ", total_attempts, " total attempts")
 
-var diag_snake_paths: Array = []  # Visual overlay only
+	print(
+		"Generated ",
+		placed,
+		"/",
+		count,
+		" snakes in ",
+		total_attempts,
+		" total attempts"
+	)
+
+var diag_snake_paths: Array = []
+# each entry:
+# {
+#     "path": Array[Vector2i],
+#     "mirrored": bool
+# }
 
 func generate_diagonal_snakes(count: int):
+
 	diag_snake_paths.clear()
+	used_diag_snake_regions.clear()
+
 	var placed = 0
+
 	var diag_patterns = [
-		[99, 82, 83, 78, 77],     
-		[98, 83, 84, 77, 76, 65,66,55,54,47,48,33,32,29,28], 
-		[97,84,85,76,75,66,67,54,53,48,49,32,31], 
-		[96,85,86,75,74,67,68,53,52,49,50], 
+		[99, 82, 83, 78, 77],
+		[98, 83, 84, 77, 76, 65,66,55,54,47,48,33,32,29,30],
+		[97,84,85,76,75,66,67,54,53,48,49,32,31],
+		[96,85,86,75,74,67,68,53,52,49,50],
 		[95,86,87,74,73,68,69,52,51],
 		[94,87,88,73,72,69,70],
 		[93,88,89,72,71],
@@ -608,107 +740,314 @@ func generate_diagonal_snakes(count: int):
 		[40,21,22,19,18,3,4],
 		[21,20,19,2,3]
 	]
-	
-	while placed < count:
+
+	var attempts = 0
+	var max_attempts = 500
+
+	while placed < count and attempts < max_attempts:
+
+		attempts += 1
+
 		var pattern = diag_patterns[randi() % diag_patterns.size()]
+		var head_region = get_region_from_head(pattern[0])
+
 		var start_idx = randi_range(0, pattern.size() - 5)
-		
-		# ODD LENGTH ONLY
-		var possible_lengths = [5, 7, 9, 11].filter(func(l): return start_idx + l <= pattern.size())
-		if possible_lengths.is_empty(): continue
-			
+
+		var possible_lengths = [5,7,9,11].filter(
+			func(l): return start_idx + l <= pattern.size()
+		)
+
+		if possible_lengths.is_empty():
+			continue
+
 		var length = possible_lengths[randi() % possible_lengths.size()]
+
 		var sliced_path = pattern.slice(start_idx, start_idx + length)
-		# STRICT HEAD VALIDATION - reject +1 patterns too
+		print(
+		"Generated ",
+		placed,
+		"/",
+		count,
+		" diag snakes after ",
+		attempts,
+		" attempts"
+		)
+
+		# -------------------------
+		# HEAD VALIDATION
+		# -------------------------
+
 		if sliced_path.size() >= 2:
-			var head = sliced_path[0]  # 39
-			var next_tile = sliced_path[1]  # 38
-				# Your 4 allowed +1 pairs
+
+			var head = sliced_path[0]
+			var next_tile = sliced_path[1]
+
 			var allowed_pairs = [
-				[81, 80], [61, 60], [41, 40], [21, 20]
+				[81,80],
+				[61,60],
+				[41,40],
+				[21,20]
 			]
-			var _is_allowed_exception = false
+
+			var is_allowed_exception = false
+
 			for pair in allowed_pairs:
 				if pair[0] == head and pair[1] == next_tile:
-					_is_allowed_exception = true
+					is_allowed_exception = true
 					break
-			# Reject if head <= next (uphill) OR next_tile+1 == head (direct +1 reverse)
-			if head <= next_tile or (next_tile + 1 == head):
-				print("✗ Skip bad diag head: [", head, ",", next_tile, "] (uphill or +1 reverse)")
+
+			if head <= next_tile or (next_tile + 1 == head and not is_allowed_exception):
+				print("✗ Skip bad diag head")
 				continue
 
-		var path_pos = sliced_path.map(number_to_tile)
-		
-		# 3 CHECKS: spacing + no overlap + head distance
-		if has_proper_spacing(path_pos) and no_tile_overlap(sliced_path) and head_spacing_ok(path_pos):
-			diag_snake_paths.append(path_pos)
-			placed += 1
-			print("✓ Diag Snake: ", sliced_path)
-		else:
-			print("✗ Rejected: ", sliced_path)
-	
-	print("Generated ", placed, "/", count, " diag snakes")
+		# -------------------------
+		# REGION CHECK
+		# -------------------------
 
+		var region = get_region_from_head(sliced_path[0])
+
+		if region == "UNKNOWN":
+			print("✗ Unknown region")
+			continue
+
+		if used_diag_snake_regions.has(region):
+			continue
+
+		# -------------------------
+		# POSITION CONVERSION
+		# -------------------------
+
+		var path_pos = sliced_path.map(number_to_tile)
+
+		# -------------------------
+		# FINAL VALIDATION
+		# -------------------------
+
+		if has_proper_spacing(path_pos) \
+			and not path_overlaps_all(sliced_path) \
+			and head_spacing_ok(path_pos):
+
+				var mirrored = randf() < 0.5
+
+				diag_snake_paths.append(
+					make_diag_snake_data(path_pos, mirrored)
+				)
+
+				used_diag_snake_regions[region] = true
+
+				placed += 1
+
+				print(
+					"✓ Diag Snake: ",
+					sliced_path,
+					" mirrored=",
+					mirrored,
+					" region=",
+					region
+				)
+
+		else:
+				print("✗ Rejected: ", sliced_path)
+func path_overlaps_all(new_path: Array) -> bool:
+
+	# -------------------------
+	# CHECK DIAG SNAKES
+	# -------------------------
+
+	for snake_data in diag_snake_paths:
+
+		var snake_path = snake_data["path"]
+
+		for pos in snake_path:
+
+			var num = board_tiles[pos].num
+
+			if new_path.has(num):
+
+				print("✗ Overlap with diag snake at ", num)
+
+				return true
+
+	# -------------------------
+	# CHECK DIAG LADDERS
+	# -------------------------
+
+	for ladder_path in diag_ladder_paths:
+
+		for pos in ladder_path:
+
+			var num = board_tiles[pos].num
+
+			if new_path.has(num):
+
+				print("✗ Overlap with diag ladder at ", num)
+
+				return true
+
+	# -------------------------
+	# CHECK STRAIGHT OBJECTS
+	# -------------------------
+
+	for num in new_path:
+
+		var pos = number_to_tile(num)
+
+		if used_cells.has(pos):
+
+			print("✗ Overlap with straight object at ", num)
+
+			return true
+
+	return false
 func no_tile_overlap(new_path: Array) -> bool:
+
 	# Check if new path overlaps ANY existing diag snake
-	for existing_path in diag_snake_paths:
-		var existing_nums = existing_path.map(func(p): return board_tiles[p].num)
+	for snake_data in diag_snake_paths:
+
+		var existing_path = snake_data["path"]
+
+		var existing_nums = existing_path.map(
+			func(p): return board_tiles[p].num
+		)
+
 		var new_set = {}
+
 		for num in new_path:
+
 			if new_set.has(num) or existing_nums.has(num):
-				return false  # Overlap detected
+				return false
+
 			new_set[num] = true
+
 	return true
 func head_spacing_ok(new_path_pos: Array) -> bool:
-	if diag_snake_paths.is_empty(): return true
-	
-	var new_head_pos = new_path_pos[0]  # GET INDEX 0 (HEAD) ✓
-	
-	for existing_path in diag_snake_paths:
-		var existing_head_pos = existing_path[0]  # GET INDEX 0 ✓
+
+	if diag_snake_paths.is_empty():
+		return true
+
+	var new_head_pos = new_path_pos[0]
+
+	for snake_data in diag_snake_paths:
+
+		var existing_path = snake_data["path"]
+
+		if existing_path.is_empty():
+			continue
+
+		var existing_head_pos = existing_path[0]
+
 		var dist = (new_head_pos - existing_head_pos).length()
+
 		if dist < 2.0:
-			print("✗ Heads too close: ", new_head_pos, " vs ", existing_head_pos)
+
+			print(
+				"✗ Heads too close: ",
+				new_head_pos,
+				" vs ",
+				existing_head_pos
+			)
+
 			return false
-	return true
 
+	return true
 func has_proper_spacing(new_path_pos: Array) -> bool:
-	for existing_path in diag_snake_paths:
-		for new_pos in new_path_pos:
-			for old_pos in existing_path:
-				var dist = (new_pos - old_pos).length()
-				if dist < 2.0:  # Too close!
-					return false
-	return true
 
+	for snake_data in diag_snake_paths:
+
+		var existing_path = snake_data["path"]
+
+		for new_pos in new_path_pos:
+
+			for old_pos in existing_path:
+
+				var dist = (new_pos - old_pos).length()
+
+				if dist < 2.0:
+					return false
+
+	return true
 func is_valid_diag_path(path_pos: Array) -> bool:
 	for pos in path_pos:
 		if not board_tiles.has(pos):
 			return false
 	return true
+
 func draw_diagonal_snakes():
-	if not diagsnakelayer: return
+
+	if not diagsnakelayer:
+		return
+
 	diagsnakelayer.clear()
-	
-	for path in diag_snake_paths:
+
+	for snake_data in diag_snake_paths:
+
+		var path = get_diag_path(snake_data)
+		var mirrored = is_diag_mirrored(snake_data)
+
 		var path_length = path.size()
+
 		for i in range(path_length):
+
 			var pos = path[i]
 			var atlas: Vector2i
-			
+
+			# HEAD
 			if i == 0:
-				atlas = DIAG_LONG_HEAD           # Index 0: Head
+
+				atlas = DIAG_LONG_HEAD
+
+			# TAIL
 			elif i == path_length - 1:
-				atlas = DIAG_LONG_TAIL           # Last: Tail
-			elif i % 2 == 1:                      # EVERY 2ND INDEX: Connector
-				atlas = DIAG_LONG_CONNECTOR
+
+				atlas = DIAG_LONG_TAIL
+
+			# BODY / CONNECTORS
 			else:
-				atlas = DIAG_LONG_BODY           # Even indices (except 0): Body
-			
-			diagsnakelayer.set_cell(pos, DIAG_SNAKE_SOURCE_ID, atlas)
-			print("DIAG[", i, "] ", board_tiles[pos].num if pos in board_tiles else "???", " → ", atlas)
 
+				# SAME parity for BOTH normal and mirrored
+				# Geometry decides connector placement
+				if i % 2 == 1:
+					atlas = DIAG_LONG_CONNECTOR
+				else:
+					atlas = DIAG_LONG_BODY
 
+			# PLACE TILE
+			diagsnakelayer.set_cell(
+				pos,
+				DIAG_SNAKE_SOURCE_ID,
+				atlas
+			)
+
+			# OPTIONAL:
+			# If using Godot 4 TileMapLayer tile flipping:
+			#
+			# if mirrored:
+			#     diagsnakelayer.set_cell(
+			#         pos,
+			#         DIAG_SNAKE_SOURCE_ID,
+			#         atlas,
+			#         0,
+			#         TileSetAtlasSource.TRANSFORM_FLIP_H
+			#     )
+
+			print(
+				"DIAG[",
+				i,
+				"] ",
+				board_tiles[pos].num if pos in board_tiles else "???",
+				" → ",
+				atlas,
+				" mirrored=",
+				mirrored
+			)
+func path_overlaps_existing(path_nums: Array) -> bool:
+
+	for num in path_nums:
+
+		if occupied_tiles.has(num):
+			return true
+
+	return false
 func is_valid_snake(path: Array) -> bool:
 	print("Validating path size=", path.size())
 	if path.size() < 3: return false
@@ -973,32 +1312,79 @@ func get_path_for_pos(pos: Vector2i) -> Array[Vector2i]:
 var diag_ladder_paths: Array = []  # Visual overlay only
 
 func generate_ladders(count: int):
+
+	used_ladder_regions.clear()
+
 	var placed = 0
 	var total_attempts = 0
 	var max_total = count * 50
+
 	while placed < count and total_attempts < max_total:
+
 		total_attempts += 1
+
 		var col_list = LADDER_COLUMN_PATHS[randi() % 10]
+
 		var start_idx = randi_range(0, col_list.size() - 3)
-		var length = randi_range(3, col_list.size() - start_idx)
-		var path_nums = col_list.slice(start_idx, start_idx + length)
+
+		var length = randi_range(
+			3,
+			col_list.size() - start_idx
+		)
+
+		var path_nums = col_list.slice(
+			start_idx,
+			start_idx + length
+		)
+
+		# LADDER REGION FROM TOP TILE
+		var region = get_region_from_head(path_nums[-1])
+
+		# ONLY ONE STRAIGHT LADDER PER REGION
+		if used_ladder_regions.has(region):
+			continue
+
 		var path_pos = path_nums.map(number_to_tile)
+
 		if is_valid_ladder(path_pos):
+
 			add_ladder_to_board(path_pos)
+
+			used_ladder_regions[region] = true
+
 			placed += 1
-			print("✓ Ladder ", placed, ": ", path_nums)
+
+			print(
+				"✓ Ladder ",
+				placed,
+				": ",
+				path_nums,
+				" region=",
+				region
+			)
+
 		else:
 			print("✗ Collision, retrying...")
-	print("Generated ", placed, "/", count, " ladders in ", total_attempts, " total attempts")
+
+	print(
+		"Generated ",
+		placed,
+		"/",
+		count,
+		" ladders in ",
+		total_attempts,
+		" total attempts"
+	)
 
 func generate_diagonal_ladders(count: int):
 	diag_ladder_paths.clear()
+	used_diag_ladder_regions.clear()
 	var placed = 0
 	
 	# USE SAME PATTERNS AS SNAKES (high→low works fine for visuals)
 	var diag_patterns = [
 		[99, 82, 83, 78, 77],     
-		[98, 83, 84, 77, 76, 65,66,55,54,47,48,33,32,29,28], 
+		[98, 83, 84, 77, 76, 65,66,55,54,47,48,33,32,29,30], 
 		[97,84,85,76,75,66,67,54,53,48,49,32,31], 
 		[96,85,86,75,74,67,68,53,52,49,50], 
 		[95,86,87,74,73,68,69,52,51],
@@ -1023,6 +1409,11 @@ func generate_diagonal_ladders(count: int):
 			
 		var length = possible_lengths[randi() % possible_lengths.size()]
 		var sliced_path = pattern.slice(start_idx, start_idx + length)
+		var region = get_region_from_head(sliced_path[0])
+		if region == "UNKNOWN":
+			continue
+		if used_diag_ladder_regions.has(region):
+			continue
 		
 		# SAME SNAKE VALIDATION (high→low patterns work for ladder visuals)
 		if sliced_path.size() >= 2:
@@ -1040,14 +1431,22 @@ func generate_diagonal_ladders(count: int):
 
 		var path_pos = sliced_path.map(number_to_tile)
 		
-		if ladder_has_proper_spacing(path_pos) and ladder_no_tile_overlap(sliced_path) and ladder_tail_spacing_ok(path_pos):
+		if ladder_has_proper_spacing(path_pos) \
+		and not path_overlaps_all(sliced_path) \
+		and ladder_tail_spacing_ok(path_pos):
+
 			diag_ladder_paths.append(path_pos)
+
+			used_diag_ladder_regions[region] = true
+
 			placed += 1
-			print("✓ Diag Ladder: ", sliced_path)
-		else:
-			print("✗ Rejected ladder: ", sliced_path)
-	
-	print("Generated ", placed, "/", count, " diag ladders")
+
+			print(
+				"✓ Diag Ladder: ",
+				sliced_path,
+				" region=",
+				region
+			)
 func add_diagonal_ladders_to_board():
 	for path_pos in diag_ladder_paths:
 		var path_nums = path_pos.map(func(p): return board_tiles[p].num)
