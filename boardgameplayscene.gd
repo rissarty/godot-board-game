@@ -47,12 +47,16 @@ extends Node2D
 #region MONEY VARS GLOBAL
 var money_nodes_by_tile : Dictionary = {}       # maps tile_num -> Sprite2D node
 var money_value : int = 5                      # how much each coin gives
-var money_tiles_positions: Array[int] = []  # Track money tile numbers
 const MONEY_SOURCE_ID = 0
 const MONEY_ATLAS_COORD = Vector2i(2,0)
 const MONEY_TILE_ID = 5
 var player_money = {"R":10,"G":10,"B":10,"Y":10}
+var money_tiles: Array[int] = []
 #endregion
+
+# Card data for the currently visible shops. These are data dictionaries, never UI nodes.
+var current_shop_cards: Array = []
+var current_permanent_shop: Array = []
 
 """===========================================AI SETUP STATE/VARS========================================================="""
 #region AI VARS/SETUP
@@ -219,7 +223,7 @@ var power_cards_db = {
 	"+3 Move": {"name":"+3 Move","move_value":3,"shop_cost":2,"rarity":"rare","art":"res://assets/Placeholdercard.png"},
 	"-4 Move": {"name":"-4 Move","move_value":-4,"shop_cost":2,"rarity":"rare","art":"res://assets/Placeholdercard.png"},
 	"Swap":    {"name":"Swap","shop_cost":3,"rarity":"epic","art":"res://assets/Placeholdercard.png"}
-	  ,"wintest": {"name":"wintest","shop_cost":0,"rarity":"common"}
+	  ,#"wintest": {"name":"wintest","shop_cost":0,"rarity":"common"}
 }
 var permanent_cards_db = {
 	"D20 Upgrade": {
@@ -330,7 +334,8 @@ func occupied(pos: Vector2i) -> bool:
 var occupied_tiles: Dictionary = {}  # tile_pos -> true (heads, tails, bodies, coins)
 var occupied_heads: Array[int] = []  # tile_num only (snake/ladder heads)
 var occupied_tails: Array[int] = []  # tile_num only (snake/ladder tails)
-
+var straight_snake_paths: Array = []
+var straight_ladder_paths: Array = []
 #endregion
 
 """===============================================SNAKE CONSTS==============================================================="""
@@ -398,6 +403,9 @@ const DIAGONAL_SKELETONS: Array = [
 ]
 var used_diag_snake_regions := {}
 var used_diag_ladder_regions := {}
+# Generated board data (for saving/debugging)
+var diag_snake_paths: Array = []
+var diag_ladder_paths: Array = []
 #endregion
 """===============================================LADDER CONSTS==============================================================="""
 #region LADDER VARS REGION
@@ -593,6 +601,72 @@ func check_snake_or_ladder(tile_num: int) -> int:
 		return dest
 	return tile_num  # No snake/ladder
 
+func rebuild_players() -> void:
+	for color in player_nodes:
+		var node = player_nodes[color]
+		var is_active := turn_order.has(color)
+		node.visible = is_active
+		if is_active:
+			move_player_to_tile(color, int(player_positions.get(color, 1)))
+func rebuild_shops() -> void:
+	#populate_shop_from_save()
+	#populate_permanent_shop_from_save()
+	pass
+func rebuild_turn_state() -> void:
+	current_turn_index = int(current_turn_index)
+	refresh_hand_for_current_player()
+	refresh_permanent_panel_for_current_player()
+	start_turn()
+func rebuild_money_tiles() -> void:
+	# clear_money_tiles() also clears the saved list, so keep a copy first.
+	var saved_tiles := money_tiles.duplicate()
+	clear_money_tiles()
+	for tile in saved_tiles:
+		add_money_tile(int(tile))
+func reset_board_objects() -> void:
+	# Paths are the source of truth for saved board objects.  Clear every
+	# derived structure before rebuilding them so JSON key conversions and stale
+	# tile state cannot affect the restored board.
+	snake_map.clear()
+	ladder_map.clear()
+	used_cells.clear()
+	used_snake_regions.clear()
+	used_ladder_regions.clear()
+	used_diag_snake_regions.clear()
+	used_diag_ladder_regions.clear()
+
+	for pos in board_tiles:
+		var info: Dictionary = board_tiles[pos]
+		info.erase("dest")
+		info.erase("body_index")
+		info.erase("body_index_max")
+		info.erase("is_diagonal")
+		info["type"] = "finish" if int(info.get("num", 0)) == 100 else "empty"
+		board_tiles[pos] = info
+
+	snake_tilemaplayer.clear()
+	diagsnakelayer.clear()
+	ladder_tilemaplayer.clear()
+	diag_ladders_layer.clear()
+
+func rebuild_board_objects() -> void:
+	reset_board_objects()
+	rebuild_straight_snakes()
+	draw_snakes_on_layer()
+	rebuild_diagonal_snakes()
+	draw_diagonal_snakes()
+	rebuild_straight_ladders()
+	draw_ladders_on_layer()
+	rebuild_diagonal_ladders()
+	draw_diagonal_ladders()
+func rebuild_game_from_save() -> void:
+	rebuild_board_objects()
+	rebuild_money_tiles()
+	rebuild_players()
+	rebuild_shops()
+	rebuild_turn_state()
+	refresh_money_label()
+	update_hand_turn_state()
 #endregion
 
 """===============================================SNAKE GEN CODE============================================================================"""
@@ -628,9 +702,10 @@ func get_board_region(tile_num: int) -> String:
 	# BOTTOM RIGHT
 	else:
 		return "BOTTOM_RIGHT"
-func make_diag_snake_data(path_pos: Array, mirrored: bool = false) -> Dictionary:
+func make_diag_snake_data(path_nums: Array, mirrored: bool = false) -> Dictionary:
 	return {
-		"path": path_pos,
+		# Tile numbers are JSON-safe. Convert to Vector2i only when accessing the board.
+		"path": path_nums.duplicate(),
 		"mirrored": mirrored
 	}
 
@@ -681,10 +756,13 @@ func generate_snakes(count: int):
 
 		if is_valid_snake(path_pos):
 
+			# Save for save/load
+			straight_snake_paths.append(path_nums.duplicate())
+
+			# Build board
 			add_snake_to_board(path_pos, false)
 
 			used_snake_regions[region] = true
-
 			placed += 1
 
 			print(
@@ -695,26 +773,6 @@ func generate_snakes(count: int):
 				" region=",
 				region
 			)
-
-		else:
-			print("✗ Collision, retrying...")
-
-	print(
-		"Generated ",
-		placed,
-		"/",
-		count,
-		" snakes in ",
-		total_attempts,
-		" total attempts"
-	)
-
-var diag_snake_paths: Array = []
-# each entry:
-# {
-#     "path": Array[Vector2i],
-#     "mirrored": bool
-# }
 
 func generate_diagonal_snakes(count: int):
 
@@ -830,11 +888,12 @@ func generate_diagonal_snakes(count: int):
 				var mirrored = randf() < 0.5
 
 				diag_snake_paths.append(
-					make_diag_snake_data(path_pos, mirrored)
+					make_diag_snake_data(sliced_path, mirrored)
 				)
 
-				used_diag_snake_regions[region] = true
+				add_snake_to_board(path_pos, true)
 
+				used_diag_snake_regions[region] = true
 				placed += 1
 
 				print(
@@ -856,11 +915,9 @@ func path_overlaps_all(new_path: Array) -> bool:
 
 	for snake_data in diag_snake_paths:
 
-		var snake_path = snake_data["path"]
+		var snake_path = get_diag_path(snake_data)
 
-		for pos in snake_path:
-
-			var num = board_tiles[pos].num
+		for num in snake_path:
 
 			if new_path.has(num):
 
@@ -874,9 +931,7 @@ func path_overlaps_all(new_path: Array) -> bool:
 
 	for ladder_path in diag_ladder_paths:
 
-		for pos in ladder_path:
-
-			var num = board_tiles[pos].num
+		for num in ladder_path:
 
 			if new_path.has(num):
 
@@ -904,11 +959,7 @@ func no_tile_overlap(new_path: Array) -> bool:
 	# Check if new path overlaps ANY existing diag snake
 	for snake_data in diag_snake_paths:
 
-		var existing_path = snake_data["path"]
-
-		var existing_nums = existing_path.map(
-			func(p): return board_tiles[p].num
-		)
+		var existing_nums = get_diag_path(snake_data)
 
 		var new_set = {}
 
@@ -929,12 +980,12 @@ func head_spacing_ok(new_path_pos: Array) -> bool:
 
 	for snake_data in diag_snake_paths:
 
-		var existing_path = snake_data["path"]
+		var existing_path = get_diag_path(snake_data)
 
 		if existing_path.is_empty():
 			continue
 
-		var existing_head_pos = existing_path[0]
+		var existing_head_pos = number_to_tile(existing_path[0])
 
 		var dist = (new_head_pos - existing_head_pos).length()
 
@@ -954,11 +1005,12 @@ func has_proper_spacing(new_path_pos: Array) -> bool:
 
 	for snake_data in diag_snake_paths:
 
-		var existing_path = snake_data["path"]
+		var existing_path = get_diag_path(snake_data)
 
 		for new_pos in new_path_pos:
 
-			for old_pos in existing_path:
+			for old_num in existing_path:
+				var old_pos = number_to_tile(old_num)
 
 				var dist = (new_pos - old_pos).length()
 
@@ -981,14 +1033,14 @@ func draw_diagonal_snakes():
 
 	for snake_data in diag_snake_paths:
 
-		var path = get_diag_path(snake_data)
+		var path_nums = get_diag_path(snake_data)
 		var mirrored = is_diag_mirrored(snake_data)
 
-		var path_length = path.size()
+		var path_length = path_nums.size()
 
 		for i in range(path_length):
 
-			var pos = path[i]
+			var pos = number_to_tile(path_nums[i])
 			var atlas: Vector2i
 
 			# HEAD
@@ -1068,11 +1120,25 @@ func is_valid_snake(path: Array) -> bool:
 	print("PASS!")
 	return true
 
+func numbers_to_tile_path(numbers: Array) -> Array:
+	var path := []
 
+	for n in numbers:
+		path.append(number_to_tile(int(n)))
+
+	return path
 func add_snake_to_board(path: Array, is_diagonal_snake: bool = false):
+	if path.size() < 2:
+		push_warning("Ignoring invalid snake path with fewer than two tiles.")
+		return
+	for pos in path:
+		if not board_tiles.has(pos):
+			push_warning("Ignoring snake path containing an invalid board tile.")
+			return
+
 	var body_count = path.size() - 2
 	var tail_num = board_tiles[path[-1]].num
-	
+
 	for i in range(path.size()):
 		var pos = path[i]
 		
@@ -1169,13 +1235,15 @@ func get_valid_neighbors(pos: Vector2i, path_so_far: Array) -> Array:
 # Helper from before
 func number_to_tile(num: int) -> Vector2i:
 	num -= 1
-	var board_width = 10
-	var row = num / board_width  # row 0 = 1-10, row 9 = 91-100
-	var col = num % board_width
+
+	var board_width := 10
+	var row := num / board_width
+	var col := num % board_width
+
 	if row % 2 == 1:
 		col = board_width - 1 - col
-	return Vector2i(-13 + col, -row)  # <- -row only (y=0 for row 0, y=-9 for row 9)
-# Helper for snake variants (customize to your tileset)
+
+	return Vector2i(-13 + col, -row)
 func get_snake_atlas_coords(type: String, pos: Vector2i, path: Array[Vector2i], index: int) -> Vector2i:
 	match type:
 		"snake_head":
@@ -1305,11 +1373,22 @@ func get_path_for_pos(pos: Vector2i) -> Array[Vector2i]:
 			else:
 				break
 		return path if path.size() > 1 else [pos]
+func rebuild_straight_snakes() -> void:
+	for path in straight_snake_paths:
+		if path is Array and path.size() >= 2:
+			add_snake_to_board(tile_numbers_to_positions(path), false)
+func rebuild_diagonal_snakes() -> void:
+	for snake in diag_snake_paths:
+		if snake is Dictionary:
+			var path: Array = get_diag_path(snake)
+			if path.size() >= 2:
+				add_snake_to_board(tile_numbers_to_positions(path), true)
+
+
 
 #endregion
 """=============================================LADDER GENERATION CODE========================================================================="""
 #region LADDER GEN CODE
-var diag_ladder_paths: Array = []  # Visual overlay only
 
 func generate_ladders(count: int):
 
@@ -1348,7 +1427,11 @@ func generate_ladders(count: int):
 
 		if is_valid_ladder(path_pos):
 
-			add_ladder_to_board(path_pos)
+			# Save the generated path
+			straight_ladder_paths.append(path_nums.duplicate())
+
+			# Build it on the board
+			add_ladder_to_board(path_pos, false)
 
 			used_ladder_regions[region] = true
 
@@ -1380,6 +1463,8 @@ func generate_diagonal_ladders(count: int):
 	diag_ladder_paths.clear()
 	used_diag_ladder_regions.clear()
 	var placed = 0
+	var attempts = 0
+	var max_attempts = count * 50
 	
 	# USE SAME PATTERNS AS SNAKES (high→low works fine for visuals)
 	var diag_patterns = [
@@ -1400,7 +1485,8 @@ func generate_diagonal_ladders(count: int):
 		[21,20,19,2,3]
 	]
 	
-	while placed < count:
+	while placed < count and attempts < max_attempts:
+		attempts += 1
 		var pattern = diag_patterns[randi() % diag_patterns.size()]
 		var start_idx = randi_range(0, pattern.size() - 5)
 		
@@ -1432,10 +1518,14 @@ func generate_diagonal_ladders(count: int):
 		var path_pos = sliced_path.map(number_to_tile)
 		
 		if ladder_has_proper_spacing(path_pos) \
-		and not path_overlaps_all(sliced_path) \
+		and not diagonal_ladder_overlaps_blocked_tiles(sliced_path) \
 		and ladder_tail_spacing_ok(path_pos):
 
-			diag_ladder_paths.append(path_pos)
+			# Save for save/load
+			diag_ladder_paths.append(sliced_path.duplicate())
+
+			# Build on board
+			add_ladder_to_board(path_pos, true)
 
 			used_diag_ladder_regions[region] = true
 
@@ -1447,40 +1537,32 @@ func generate_diagonal_ladders(count: int):
 				" region=",
 				region
 			)
-func add_diagonal_ladders_to_board():
-	for path_pos in diag_ladder_paths:
-		var path_nums = path_pos.map(func(p): return board_tiles[p].num)
-		var tail_num = path_nums.min()   # LOWEST = functional tail (entry)
-		var head_num = path_nums.max()   # HIGHEST = functional head (exit)
-		
-		for i in range(path_pos.size()):
-			var pos = path_pos[i]
-			var info = board_tiles[pos]
-			
-			# TELEPORT: always low→high regardless of path order
-			info.dest = head_num
-			
-			# VISUALS: swap head/tail for ladder direction
-			if board_tiles[pos].num == tail_num:      # LOWEST number
-				info.type = "ladder_tail"             # Entry (bottom visually)
-			elif board_tiles[pos].num == head_num:    # HIGHEST number  
-				info.type = "ladder_head"             # Exit (top visually)
-			else:
-				info.type = "ladder_body"
-			
-			info.body_index = i
-			info.is_diagonal = true
-			board_tiles[pos] = info
-			
-			# Register teleport
-			if board_tiles[pos].num == tail_num:
-				ladder_map[tail_num] = head_num
-				print("Ladder: ", tail_num, "→", head_num)
 
+func diagonal_ladder_overlaps_blocked_tiles(new_path: Array) -> bool:
+	# Keep diagonal ladders off all snake paths and other diagonal ladders.
+	for snake_data in diag_snake_paths:
+		for tile_num in get_diag_path(snake_data):
+			if new_path.has(tile_num):
+				return true
+	for ladder_path in diag_ladder_paths:
+		for tile_num in ladder_path:
+			if new_path.has(tile_num):
+				return true
+	for snake_path in straight_snake_paths:
+		for tile_num in snake_path:
+			if new_path.has(tile_num):
+				return true
+
+	# Straight-ladder bodies are allowed; only their entry and exit cells are
+	# reserved so a diagonal ladder cannot cover either endpoint.
+	for ladder_path in straight_ladder_paths:
+		if ladder_path.size() >= 2 and (new_path.has(ladder_path[0]) or new_path.has(ladder_path[-1])):
+			return true
+	return false
 
 func ladder_no_tile_overlap(new_path: Array) -> bool:
 	for existing_path in diag_ladder_paths:
-		var existing_nums = existing_path.map(func(p): return board_tiles[p].num)
+		var existing_nums = existing_path
 		var new_set = {}
 		for num in new_path:
 			if new_set.has(num) or existing_nums.has(num):
@@ -1497,9 +1579,9 @@ func ladder_tail_spacing_ok(new_path_pos: Array) -> bool:
 	var new_tail_pos = new_path_pos[path_nums.find(new_tail_num)]
 	
 	for existing_path in diag_ladder_paths:
-		var existing_nums = existing_path.map(func(p): return board_tiles[p].num)
+		var existing_nums = existing_path
 		var existing_tail_num = existing_nums.min()
-		var existing_tail_pos = existing_path[existing_nums.find(existing_tail_num)]
+		var existing_tail_pos = number_to_tile(existing_tail_num)
 		
 		var dist = (new_tail_pos - existing_tail_pos).length()
 		if dist < 2.0:
@@ -1511,7 +1593,8 @@ func ladder_tail_spacing_ok(new_path_pos: Array) -> bool:
 func ladder_has_proper_spacing(new_path_pos: Array) -> bool:
 	for existing_path in diag_ladder_paths:
 		for new_pos in new_path_pos:
-			for old_pos in existing_path:
+			for old_num in existing_path:
+				var old_pos = number_to_tile(old_num)
 				var dist = (new_pos - old_pos).length()
 				if dist < 2.0:
 					return false
@@ -1523,7 +1606,7 @@ func draw_diagonal_ladders():
 	for path in diag_ladder_paths:
 		var path_length = path.size()
 		for i in range(path_length):
-			var pos = path[i]
+			var pos = number_to_tile(path[i])
 			var atlas: Vector2i
 			
 			if i == 0:
@@ -1552,30 +1635,55 @@ func is_valid_ladder(path: Array) -> bool:
 	print("Validating ladder size=", path.size(), " from ", tail_num, " to ", head_num)
 	return true
 
-func add_ladder_to_board(path: Array):
+func add_ladder_to_board(path: Array, is_diagonal: bool = false) -> void:
+	if path.size() < 2:
+		push_warning("Ignoring invalid ladder path with fewer than two tiles.")
+		return
+	for pos in path:
+		if not board_tiles.has(pos):
+			push_warning("Ignoring ladder path containing an invalid board tile.")
+			return
+
+	var path_numbers: Array = []
+	for pos in path:
+		path_numbers.append(int(board_tiles[pos].num))
+	var tail_num = path_numbers.min() if is_diagonal else path_numbers[0]
+	var head_num = path_numbers.max() if is_diagonal else path_numbers[-1]
+
 	for i in range(path.size()):
 		var pos = path[i]
 		var info = board_tiles[pos]
-		var num = info.num
-		if i == 0:
+		# Diagonal ladders may cross a straight ladder body. Keep the straight
+		# ladder's board state intact; the diagonal layer renders independently.
+		if is_diagonal and not info.get("is_diagonal", false) and info.get("type", "empty") != "empty":
+			continue
+
+		if int(info.num) == tail_num:
 			info.type = "ladder_tail"
-		elif i == path.size() - 1:
+		elif int(info.num) == head_num:
 			info.type = "ladder_head"
 		else:
 			info.type = "ladder_body"
-		info.body_index = i
-		info.dest = board_tiles[path[-1]].num
-		board_tiles[pos] = info
-		used_cells[pos] = true
-		# Register ladder tail only
-		if i == 0:
-			ladder_map[num] = info.dest
-			print("Ladder: ", num, " → ", info.dest)
 
+		info.body_index = i
+		info.dest = head_num
+		info.is_diagonal = is_diagonal
+
+		board_tiles[pos] = info
+
+		# Straight ladders reserve cells
+		if !is_diagonal:
+			used_cells[pos] = true
+
+	ladder_map[tail_num] = head_num
+
+	print("Ladder:", tail_num, "→", head_num)
 func draw_ladders_on_layer():
 	ladder_tilemaplayer.clear()
 	for pos in board_tiles:
 		var info = board_tiles.get(pos, {})
+		if info.get("is_diagonal", false):
+			continue
 		match info.get("type"):
 			"ladder_head":
 				ladder_tilemaplayer.set_cell(pos, LADDER_SOURCE_ID, LADDER_HEAD_ATLAS)
@@ -1583,6 +1691,16 @@ func draw_ladders_on_layer():
 				ladder_tilemaplayer.set_cell(pos, LADDER_SOURCE_ID, LADDER_TAIL_ATLAS)
 			"ladder_body":
 				ladder_tilemaplayer.set_cell(pos, LADDER_SOURCE_ID, LADDER_BODY_ATLAS)
+func rebuild_straight_ladders() -> void:
+	for path in straight_ladder_paths:
+		if path is Array and path.size() >= 2:
+			add_ladder_to_board(tile_numbers_to_positions(path), false)
+func rebuild_diagonal_ladders() -> void:
+	for path in diag_ladder_paths:
+		if path is Array and path.size() >= 2:
+			add_ladder_to_board(tile_numbers_to_positions(path), true)
+
+
 #endregion
 # Gameplay: Check tile when player lands
 
@@ -1590,33 +1708,63 @@ func draw_ladders_on_layer():
 
 #region READY
 func _ready() -> void:
-	hand_container.mouse_filter = 2  # Ignore ALL input
-	print("Board bounds: min ", board_tiles.keys().min(), " max ", board_tiles.keys().max())
-	print("Sample: (-13,0)=", board_tiles[Vector2i(-13,0)])
-	snake_tilemaplayer.z_index = 150
-	print("Snake layer Z-index:", snake_tilemaplayer.z_index)
-	# 1) FIRST: Setup TILE_SIZE
-	var scaled := get_scaled_tile_size()
-	if typeof(scaled) == TYPE_VECTOR2 and scaled.x > 0 and scaled.y > 0:
-		TILE_SIZE = scaled
-		print("Using TILE_SIZE:", TILE_SIZE)
 
-	# 2) SECOND: Generate tile_map - NOW tile_map[1] exists!
+	# --------------------------------------------------
+	# Scene Initialization
+	# --------------------------------------------------
+	initialize_board()
+	initialize_ui()
+	initialize_player_nodes()
+	connect_buttons()
+
+	# --------------------------------------------------
+	# Load or Generate Game
+	# --------------------------------------------------
+	# --------------------------------------------------
+# Load or Generate Game
+# --------------------------------------------------
+	if Gamestate.startup_mode == Gamestate.StartupMode.LOAD_GAME:
+		if FileAccess.file_exists(Gamestate.save_file):
+			load_game_state()
+		else:
+			print("⚠ Save file not found. Starting new game.")
+			generate_new_game()
+	else:
+		generate_new_game()
+
+	# --------------------------------------------------
+	# Final UI Refresh
+	# --------------------------------------------------
+	refresh_money_label()
+	update_hand_turn_state()
+func initialize_board() -> void:
+
+	hand_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var scaled := get_scaled_tile_size()
+	if scaled.x > 0 and scaled.y > 0:
+		TILE_SIZE = scaled
+
 	generate_tile_map()
 
-	# 3) NOW: Get board origin (safe)
-	var origin = get_board_origin()
-	print("Board origin (tile 1):", origin)
-	
-	# 4) Clear and test
+	print("Board origin:", get_board_origin())
+
 	snake_tilemaplayer.clear()
+	snake_tilemaplayer.z_index = 150
+
 	offset = {
-	"R": Vector2(-4,-4),
-	"G": Vector2(4,-4),
-	"B": Vector2(-4,4),
-	"Y": Vector2(4,4)
-}
-	# Safely boost z_index for all UI panels
+		"R": Vector2(-4,-4),
+		"G": Vector2(4,-4),
+		"B": Vector2(-4,4),
+		"Y": Vector2(4,4)
+	}
+
+	_recalculate_tile_size()
+func initialize_ui() -> void:
+
+	if victory_panel:
+		victory_panel.visible = false
+
 	var ui_panels = [
 		$UI/HandPanel,
 		$UI/Shoppanel,
@@ -1626,17 +1774,13 @@ func _ready() -> void:
 		$UI/Panel,
 		$Victorypanel
 	]
+
 	for panel in ui_panels:
-		if panel != null:
+		if panel:
 			panel.z_index = 100
 
-
-	# 5) Rest of your original setup...
-	if victory_panel:
-		victory_panel.visible = false
-	else:
-		push_warning("Victorypanel not found — check scene tree path!")
-	spawn_money_tiles(5)
+	colourpanel.visible = false
+func initialize_player_nodes() -> void:
 
 	player_nodes = {
 		"R": $playerRED,
@@ -1644,45 +1788,46 @@ func _ready() -> void:
 		"B": $playerBLUE,
 		"Y": $playerYELLOW
 	}
+
 	if tile_map.has(1):
-		for color in player_nodes.keys():
-			var n = player_nodes[color]
-			if n != null:
-				n.global_position = get_world_center_from_tile_index(1) + offset.get(color, Vector2.ZERO)
-	# Connect buttons safely
-	var cb_red = Callable(self, "_on_choose_color").bind("R")
-	if red_button and not red_button.pressed.is_connected(cb_red):
-		red_button.pressed.connect(cb_red)
+		for color in player_nodes:
+			player_nodes[color].global_position = \
+				get_world_center_from_tile_index(1) + offset[color]
+func connect_buttons() -> void:
 
-	var cb_blue = Callable(self, "_on_choose_color").bind("B")
-	if blue_button and not blue_button.pressed.is_connected(cb_blue):
-		blue_button.pressed.connect(cb_blue)
+	var buttons = {
+		red_button: "R",
+		green_button: "G",
+		blue_button: "B",
+		yellow_button: "Y"
+	}
 
-	var cb_green = Callable(self, "_on_choose_color").bind("G")
-	if green_button and not green_button.pressed.is_connected(cb_green):
-		green_button.pressed.connect(cb_green)
+	for button in buttons.keys():
+		var callable = Callable(self, "_on_choose_color").bind(buttons[button])
 
-	var cb_yellow = Callable(self, "_on_choose_color").bind("Y")
-	if yellow_button and not yellow_button.pressed.is_connected(cb_yellow):
-		yellow_button.pressed.connect(cb_yellow)
+		if button and not button.pressed.is_connected(callable):
+			button.pressed.connect(callable)
 
-	colourpanel.visible = false
 	back_button.pressed.connect(_on_backtomenubutton_pressed)
+func generate_new_game() -> void:
 	used_cells.clear()
-	print("Starting snake generation...")
-	generate_snakes(2)  # Reduce count temporarily
-	print("Straights done, starting diagonals...")
-	generate_diagonal_snakes(2)  # Just 3 diagonal
-	print("Diagonals done, drawing...")
+
+	generate_snakes(2)
+	generate_diagonal_snakes(2)
+
 	draw_snakes_on_layer()
 	draw_diagonal_snakes()
-	print("Drawing done!")
+
 	generate_ladders(2)
-	draw_ladders_on_layer()
 	generate_diagonal_ladders(3)
-	add_diagonal_ladders_to_board()
+
+	draw_ladders_on_layer()
 	draw_diagonal_ladders()
-	_recalculate_tile_size()
+
+	spawn_money_tiles(5)
+
+	update_game_state()
+
 #endregion
 """================================================TILE/POS/PLAYER HElPERS========================================================================"""
 #region TILE/POS/PLAYER HElPERS
@@ -1753,7 +1898,13 @@ func tile_index_to_xy(tile_num: int) -> Vector2i:
 	if row % 2 == 1:  # Odd rows: right→left
 		col = 9 - col
 	return Vector2i(col, row)
+func tile_numbers_to_positions(path: Array) -> Array:
+	var result: Array = []
 
+	for n in path:
+		result.append(number_to_tile(int(n)))
+
+	return result
 func get_world_pos_from_tile_coords(cell: Vector2i) -> Vector2:
 	var tm: TileMapLayer = $TileMap/Tilemaplayerresized
 	var local_pos: Vector2 = tm.map_to_local(cell)
@@ -1773,9 +1924,11 @@ func get_world_center_from_tile_index(tile_index: int) -> Vector2:
 
 func move_player_to_tile(color: String, tile_index: int) -> void:
 	var n = player_nodes.get(color)
-	if n == null:
+	if n == null or not tile_map.has(tile_index):
 		return
-	n.global_position = get_world_center_from_tile_index(tile_index) + offset.get(color, Vector2.ZERO)
+	# Use the same board coordinates as normal movement, so loaded pins are
+	# visible immediately and do not wait for a dice roll to correct them.
+	n.position = tile_map[tile_index] + get_offset_if_needed(tile_index, color)
 
 func get_board_origin() -> Vector2i:
 	var world_pos_tile1 = tile_map[1]
@@ -2056,7 +2209,7 @@ func ai_buy_permanent(color: String, rarity: String = "common") -> void:
 #region PLAYER WIN/CONFIGURE MODE/COLOR AND RELADED CODE
 
 func get_current_player_color() -> String:
-	return turn_order[current_turn_index]
+	return get_current_player()
 func _finalize_setup():
 	# Hide unused player sprites
 	for color in ["R","G","B","Y"]:
@@ -2712,6 +2865,7 @@ func _on_swap_target_selected(target_player_color: String) -> void:
 	playerswappanel.visible = false
 	swap_source_player = ""
 	swap_target_delegate = ""
+	update_game_state()
 func update_player_positions() -> void:
 	for color in player_nodes.keys():
 		var t: int = int(player_positions.get(color, 1))
@@ -2828,6 +2982,7 @@ func sell_card(card_data: Dictionary, card_node: Node) -> void:
 	refresh_money_label()
 	refresh_hand_for_current_player()
 	refresh_permanent_panel_for_current_player()
+	update_game_state()
 
 
 func populate_shop() -> void:
@@ -2840,6 +2995,7 @@ func populate_shop() -> void:
 	for c in shop_container.get_children():
 		c.queue_free()
 
+	current_shop_cards.clear()
 	var shop_cards: Array = []
 	while shop_cards.size() < cards_per_shop:
 		var n = get_random_card_name()
@@ -2847,13 +3003,16 @@ func populate_shop() -> void:
 			shop_cards.append(n)
 
 	for card_name in shop_cards:
-		var card_data: Dictionary = power_cards_db[card_name]
+		var card_data: Dictionary = power_cards_db[card_name].duplicate(true)
+		current_shop_cards.append(card_data)
 		var card = card_scene.instantiate()
 		card.set_card_data(card_data)
 		card.card_mode = "shop"
 		print_debug("SHOP card mode:", card.card_mode, "name:", card_data.get("name",""))           # <- not sellable
 		card.connect("card_clicked", Callable(self, "_on_shop_card_bought").bind(card))
 		shop_container.add_child(card)
+
+	update_game_state()
 
 func _on_shop_card_bought(card_data: Dictionary, shop_card_node: Node) -> void:
 	var current_player := get_current_player_color()
@@ -2878,6 +3037,7 @@ func _on_shop_card_bought(card_data: Dictionary, shop_card_node: Node) -> void:
 	var purchased_card := card_data.duplicate(true)
 	purchased_card["owner_color"] = current_player
 	player_hands[current_player].append(purchased_card)
+	current_shop_cards.erase(card_data)
 
 	print("🛒", current_player, "purchased", purchased_card["name"], "for $", cost)
 
@@ -2886,11 +3046,14 @@ func _on_shop_card_bought(card_data: Dictionary, shop_card_node: Node) -> void:
 
 	if is_instance_valid(shop_card_node):
 		shop_card_node.queue_free()
+	update_game_state()
 
 func populate_permanent_shop(for_player_id: String) -> void:
 	for c in permshopcontainer.get_children():
 		c.queue_free()
 	if permanent_cards_db.size() == 0:
+		current_permanent_shop.clear()
+		update_game_state()
 		return
 
 	# build candidate list (skip ones the player already has if possible)
@@ -2909,14 +3072,18 @@ func populate_permanent_shop(for_player_id: String) -> void:
 	# choose up to 2 permanents to show
 	filtered.shuffle()
 	var show_count: int = min(2, filtered.size())
+	current_permanent_shop.clear()
 	for i in range(show_count):
 		var name: String = filtered[i] as String
-		var data: Dictionary = permanent_cards_db[name]
+		var data: Dictionary = permanent_cards_db[name].duplicate(true)
+		current_permanent_shop.append(data)
 		var card = card_scene.instantiate()
 		card.set_card_data(data)
 		card.card_mode = "shop"                 # <- not sellable
 		card.connect("card_clicked", Callable(self, "_on_permanent_card_bought").bind(card))
 		permshopcontainer.add_child(card)
+
+	update_game_state()
 
 
 func refresh_permanent_panel_for_current_player() -> void:
@@ -2964,6 +3131,7 @@ func _on_permanent_card_bought(card_data: Dictionary, shop_card_node: Node) -> v
 	
 	player_permanent_cards[current_player].append(copy)  # Hand panel
 	player_permanents[current_player].append(copy)       # Effects/has() ✅
+	current_permanent_shop.erase(card_data)
 
 	apply_permanent_effect(copy, current_player)
 	refresh_permanent_panel_for_current_player()
@@ -2971,6 +3139,7 @@ func _on_permanent_card_bought(card_data: Dictionary, shop_card_node: Node) -> v
 	refresh_money_label()
 	if is_instance_valid(shop_card_node):
 		shop_card_node.queue_free()
+	update_game_state()
 
 func apply_permanent_effect(card_data: Dictionary, player_color: String) -> void:
 	var name := String(card_data.get("name",""))
@@ -3019,6 +3188,7 @@ func add_money(color: String, amount: int) -> void:
 		_perm_log("%s is now in debt: $%d (max debt: $%d)" % [color, new_balance, max_debt])
 	else:
 		_perm_log("%s now has $%d" % [color, new_balance])
+	update_game_state()
 
 func set_coin_visuals(size_factor: float, offset_vec: Vector2):
 	for tile_num: int in money_nodes_by_tile.keys():
@@ -3063,25 +3233,25 @@ func spawn_money_tiles(count: int = 5) -> void:
 			available_tiles.append(tile_num)
 	
 	available_tiles.shuffle()
-	money_tiles_positions = available_tiles.slice(0, count)
+	money_tiles = available_tiles.slice(0, count)
 	
-	for tile_num in money_tiles_positions:
+	for tile_num in money_tiles:
 		var tile_coords: Vector2i = number_to_tile(tile_num)
 		moneylayer.set_cell(tile_coords, MONEY_SOURCE_ID, MONEY_ATLAS_COORD)
 	
-	print("🚫 Blocked: ", blocked_tiles.size(), " | 💰 Safe: ", money_tiles_positions)
+	print("🚫 Blocked: ", blocked_tiles.size(), " | 💰 Safe: ", money_tiles)
 
 
 func clear_money_tiles() -> void:
 	moneylayer.clear()
-	money_tiles_positions.clear()
+	money_tiles.clear()
 # Check player collection
 func check_for_money_collection(player_color: String) -> void:
 	var current_tile: int = player_positions[player_color]
 	
-	if current_tile in money_tiles_positions:
+	if current_tile in money_tiles:
 		player_money[player_color] += money_value
-		money_tiles_positions.erase(current_tile)
+		money_tiles.erase(current_tile)
 		
 		# Remove from TileMapLayer instantly
 		var tile_coords: Vector2i = number_to_tile(current_tile)
@@ -3191,8 +3361,18 @@ func try_spend_money(color: String, amount: int) -> bool:
 		_perm_log("%s spent $%d -> debt $%d (max $%d)" % [color, amount, player_money[color], max_debt])
 	else:
 		_perm_log("%s spent $%d -> $%d" % [color, amount, player_money[color]])
+	update_game_state()
 	return true
-
+func add_money_tile(tile_num: int) -> void:
+	tile_num = int(tile_num)
+	if money_tiles.has(tile_num):
+		return
+	money_tiles.append(tile_num)
+	var tile_coords := number_to_tile(tile_num)
+	moneylayer.set_cell(
+		tile_coords,
+		MONEY_SOURCE_ID,
+		MONEY_ATLAS_COORD)
 
 #endregion
 """================================================DICEROLL/CARDEFFECTS/ENDTURN/GENERATE RANDOM CARDS========================================================"""
@@ -3209,6 +3389,7 @@ func apply_card_effect(move_value: int) -> void:
 	if player_nodes.has(current_color) and tile_map.has(player_positions[current_color]):
 		player_nodes[current_color].position = tile_map[player_positions[current_color]] + get_offset_if_needed(player_positions[current_color], current_color)
 	check_for_money_collection(current_color)
+	update_game_state()
 	if _check_victory_for_color(current_color):
 		return
 	if game_over:
@@ -3485,6 +3666,7 @@ func end_turn() -> void:
 	refresh_hand_for_current_player()
 	start_turn()
 	refresh_money_label()
+	update_game_state()
 
 func get_current_player() -> String:
 	if turn_order.is_empty():
@@ -3562,6 +3744,7 @@ func show_victory_panel(message: String) -> void:
 func upgrade_dice(sides: int, color: String) -> void:
 	player_dice_sides[color] = sides
 	_perm_log("%s upgraded to a D%d permanently!" % [color, sides])
+	update_game_state()
 
 func odd_space_move(color: String) -> void:
 	var pos = player_positions[color]
@@ -3591,11 +3774,243 @@ func apply_fibonacci_synergy(color: String) -> void:
 	# Example: double next Fibonacci card effect
 	player_effects[color]["fibonacci_boost"] = true
 	_perm_log("%s gained Fibonacci Synergy (next Fibonacci card stronger)." % color)
+	update_game_state()
 #endregion
 
 """================================================DEBUG FUNCTIONS AND RELATED=============================================================="""
 #region DEBUGS AND OTHER RELATED
+func normalize_number_path(raw_path: Variant, minimum_size: int = 2) -> Array:
+	var result: Array = []
+	if not (raw_path is Array):
+		return result
 
+	for raw_tile in raw_path:
+		var tile_num := int(raw_tile)
+		if tile_num < 1 or tile_num > 100 or result.has(tile_num):
+			return []
+		result.append(tile_num)
+
+	return result if result.size() >= minimum_size else []
+
+func normalize_number_paths(raw_paths: Variant, minimum_size: int = 2) -> Array:
+	var result: Array = []
+	if not (raw_paths is Array):
+		return result
+
+	for raw_path in raw_paths:
+		var path := normalize_number_path(raw_path, minimum_size)
+		if not path.is_empty():
+			result.append(path)
+	return result
+
+func normalize_diag_snake_paths(raw_paths: Variant) -> Array:
+	var result: Array = []
+	if not (raw_paths is Array):
+		return result
+
+	for raw_snake in raw_paths:
+		var raw_path: Variant = raw_snake
+		var mirrored := false
+		if raw_snake is Dictionary:
+			raw_path = raw_snake.get("path", [])
+			mirrored = bool(raw_snake.get("mirrored", false))
+		var path := normalize_number_path(raw_path, 2)
+		if not path.is_empty():
+			result.append(make_diag_snake_data(path, mirrored))
+	return result
+
+func load_game_state() -> void:
+
+	if !FileAccess.file_exists(Gamestate.save_file):
+		push_error("No save file found.")
+		return
+
+	var file := FileAccess.open(Gamestate.save_file, FileAccess.READ)
+	var text := file.get_as_text()
+	file.close()
+
+	var json := JSON.new()
+
+	if json.parse(text) != OK:
+		push_error("Failed to parse save.")
+		return
+
+	if not (json.data is Dictionary):
+		push_error("Save data is not a JSON object.")
+		return
+	var data : Dictionary = json.data
+
+	# -------------------------------------------------
+	# Restore Board
+	# -------------------------------------------------
+
+	straight_snake_paths = normalize_number_paths(data.get("straight_snakes", []))
+	diag_snake_paths = normalize_diag_snake_paths(data.get("diag_snakes", []))
+	straight_ladder_paths = normalize_number_paths(data.get("straight_ladders", []))
+	diag_ladder_paths = normalize_number_paths(data.get("diag_ladders", []))
+
+	# JSON object keys are strings.  Rebuild these maps from the paths instead
+	# of using their serialized form, which guarantees integer tile keys.
+	snake_map.clear()
+	ladder_map.clear()
+
+	blocked_tiles = to_int_array(data.get("blocked_tiles", []))
+	money_tiles = to_int_array(data.get("money_tiles", []))
+
+	# -------------------------------------------------
+	# Restore Players
+	# -------------------------------------------------
+
+	player_positions = to_string_int_dict(data.get("player_positions", {}))
+	player_money = to_string_int_dict(data.get("player_money", {}))
+	player_dice_sides = to_string_int_dict(data.get("player_dice_sides", {}))
+	player_hands = data.get("player_hands", {})
+	player_permanents = data.get("player_permanents", {})
+	player_permanent_cards = player_permanents.duplicate(true)
+
+	player_is_ai = data.get("player_is_ai", {})
+	ai_level_by_color = data.get("ai_level_by_color", {})
+
+	# -------------------------------------------------
+	# Restore Game
+	# -------------------------------------------------
+
+	game_mode = data.get("game_mode", "pass")
+	desired_player_count = int(data.get("desired_player_count", 2))
+
+	turn_order = []
+	var saved_turn_order = data.get("turn_order", [])
+	if saved_turn_order is Array:
+		for color in saved_turn_order:
+			var code := String(color)
+			if code in ["R", "G", "B", "Y"] and not turn_order.has(code):
+				turn_order.append(code)
+	if turn_order.is_empty():
+		turn_order = ["R", "B"]
+	current_turn_index = int(data.get("current_turn_index", 0))
+
+
+	current_shop_cards = data.get("current_shop_cards", [])
+	current_permanent_shop = data.get("current_permanent_shop", [])
+
+	print("===== SAVE LOADED =====")
+
+	rebuild_game_from_save()
+func to_int_array(values: Variant) -> Array[int]:
+	var result: Array[int] = []
+	if not (values is Array):
+		return result
+	for v in values:
+		result.append(int(v))
+	return result
+
+
+func to_string_int_dict(values: Variant) -> Dictionary:
+	var result := {}
+	if not (values is Dictionary):
+		return result
+	for k in values:
+		result[String(k)] = int(values[k])
+	return result
+
+
+func to_string_bool_dict(dict: Dictionary) -> Dictionary:
+	var result := {}
+	for k in dict:
+		result[String(k)] = bool(dict[k])
+	return result
+func save_game_state():
+
+	var save_data = get_save_data()
+
+	# Actual profile save
+	var file = FileAccess.open(Gamestate.save_file, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(save_data,"\t"))
+		file.close()
+
+	# Optional debug copy
+	var debug = FileAccess.open("user://debug_save.json", FileAccess.WRITE)
+	if debug:
+		debug.store_string(JSON.stringify(save_data,"\t"))
+		debug.close()
+
+	print("Saved profile:", Gamestate.save_file)
+
+func get_used_cell_numbers() -> Array:
+	var cell_numbers: Array = []
+
+	for pos in used_cells.keys():
+		if board_tiles.has(pos):
+			cell_numbers.append(board_tiles[pos].num)
+
+	return cell_numbers
+
+
+func get_json_number_map(source: Dictionary) -> Dictionary:
+	var json_map: Dictionary = {}
+
+	for key in source:
+		# JSON object keys are strings; the loader will convert these back to integers.
+		json_map[str(key)] = source[key]
+
+	return json_map
+
+
+func get_save_data() -> Dictionary:
+	return {
+		# ===== BOARD =====
+		"straight_snakes": straight_snake_paths.duplicate(true),
+		"diag_snakes": diag_snake_paths.duplicate(true),
+
+		"straight_ladders": straight_ladder_paths.duplicate(true),
+		"diag_ladders": diag_ladder_paths.duplicate(true),
+
+		"snake_map": get_json_number_map(snake_map),
+		"ladder_map": get_json_number_map(ladder_map),
+		"blocked_tiles": blocked_tiles.duplicate(),
+
+		# Dictionary keys cannot be Vector2i in JSON; persist occupied tile numbers instead.
+		"used_cells": get_used_cell_numbers(),
+
+		# ===== PLAYERS =====
+		"player_positions": player_positions.duplicate(true),
+		"player_money": player_money.duplicate(true),
+		"player_hands": player_hands.duplicate(true),
+		"player_permanents": player_permanents.duplicate(true),
+		"player_dice_sides": player_dice_sides.duplicate(true),
+
+		# ===== GAME SETUP / SHOPS =====
+		"game_mode": game_mode,
+		"desired_player_count": desired_player_count,
+		"current_shop_cards": current_shop_cards.duplicate(true),
+		"current_permanent_shop": current_permanent_shop.duplicate(true),
+		"money_tiles": money_tiles.duplicate(),
+
+		# ===== TURN =====
+		"turn_order": turn_order.duplicate(true),
+		"current_turn_index": current_turn_index,
+
+		# ===== AI =====
+		"player_is_ai": player_is_ai.duplicate(true),
+		"ai_level_by_color": ai_level_by_color.duplicate(true)
+	}
+
+
+func update_game_state() -> void:
+	debug_dump_board_state()
+	save_game_state()
+
+
+func debug_dump_board_state() -> void:
+	var state := get_save_data()
+
+	print("==============================")
+
+	for key in state.keys():
+		print(key, " = ", state[key])
+
+	print("==============================")
 # --- DEBUG FUNCTIONS ---
 var snake_nodes_by_tile: Dictionary = {}
 # debug helpers
@@ -3647,3 +4062,7 @@ func _debug_print_ai_state(tag: String = "") -> void:
 	print("current_turn_index:", current_turn_index)
 	print("==============================")
 #endregion
+
+
+func _on_backtomenu_button_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/menuscene.tscn")

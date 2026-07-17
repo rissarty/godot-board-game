@@ -1,7 +1,6 @@
 [gd_scene format=4 uid="uid://cewrglbkov8ef"]
 
 [ext_resource type="Script" uid="uid://hjbygatmwse0" path="res://boardgameplayscene.gd" id="1_argfh"]
-[ext_resource type="Texture2D" uid="uid://d22jaxbafg8b8" path="res://assets/pixil-frame-0_scaled_6x_pngcrushed.png" id="2_whvtt"]
 [ext_resource type="Texture2D" uid="uid://bpsrftwenoe4r" path="res://assets/New Piskel(5).png" id="3_dgayj"]
 [ext_resource type="Texture2D" uid="uid://b8o8wv6cgxwqf" path="res://assets/tileset_scaled_2x_pngcrushed.png" id="3_id3j5"]
 [ext_resource type="Texture2D" uid="uid://bguvc7pcpd7ws" path="res://assets/map(1).png" id="4_6t7ku"]
@@ -522,6 +521,12 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 corner_detail = 5
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h1d3w"]
+bg_color = Color(0.24313726, 0.3529412, 0.63529414, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o5ik4"]
+bg_color = Color(0.2901961, 0.03137255, 0.26666668, 1)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1ihpm"]
 content_margin_left = 0.0
 content_margin_top = 0.0
@@ -661,11 +666,10 @@ position = Vector2(348.48, 636.48004)
 scale = Vector2(0.32, 0.32)
 texture = ExtResource("6_s8inr")
 
-[node name="Moneytilesprite" type="Sprite2D" parent="." unique_id=652287436]
-visible = false
-position = Vector2(380, 620)
-scale = Vector2(0.416667, 0.416667)
-texture = ExtResource("2_whvtt")
+[node name="BacktomenuButton" type="Button" parent="." unique_id=1739170594]
+offset_right = 109.0
+offset_bottom = 46.0
+text = "Menu"
 
 [node name="dicerollbutton" type="Button" parent="." unique_id=219091320]
 anchors_preset = 5
@@ -753,29 +757,65 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_m64gg")
 metadata/_edit_use_anchors_ = true
 
 [node name="Shopcontainer1" type="HBoxContainer" parent="UI/Shoppanel" unique_id=1851499587]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.18092105
+anchor_bottom = 0.18092105
+offset_left = 240.0
+offset_right = 672.0
+offset_bottom = 220.0
+metadata/_edit_use_anchors_ = true
+
+[node name="Panel" type="Panel" parent="UI/Shoppanel/Shopcontainer1" unique_id=2052913449]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_h1d3w")
+
+[node name="permshopcontainer" type="HBoxContainer" parent="UI/Shoppanel" unique_id=98304589]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.18092105
+anchor_bottom = 0.18092105
+offset_right = 240.0
+offset_bottom = 220.0
+
+[node name="Panel" type="Panel" parent="UI/Shoppanel/permshopcontainer" unique_id=1898490506]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_o5ik4")
+
+[node name="PERMS LABEL" type="Label" parent="UI/Shoppanel" unique_id=1207685502]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 239.0
+offset_bottom = 33.0
+theme_override_colors/font_color = Color(0.7882353, 0.74509805, 0.02745098, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+text = "PERMANENTS"
+horizontal_alignment = 1
+
+[node name="POWERCARDS LABEL" type="Label" parent="UI/Shoppanel" unique_id=1913457473]
 layout_mode = 0
 offset_left = 240.0
 offset_right = 672.0
-offset_bottom = 168.0
-metadata/_edit_use_anchors_ = true
-
-[node name="permshopcontainer" type="HBoxContainer" parent="UI/Shoppanel" unique_id=98304589]
-layout_mode = 0
-offset_right = 240.0
-offset_bottom = 168.0
-metadata/_edit_use_anchors_ = true
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.7882353, 0.74509805, 0.02745098, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+text = "POWERCARDS"
+horizontal_alignment = 1
 
 [node name="PermanentPanel" type="Panel" parent="UI" unique_id=425726880]
 visible = false
+custom_minimum_size = Vector2(0, 200)
 offset_left = 320.0
 offset_right = 896.0
 offset_bottom = 168.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_1ihpm")
 
 [node name="permContainer" type="HBoxContainer" parent="UI/PermanentPanel" unique_id=687396747]
+custom_minimum_size = Vector2(120, 200)
 clip_contents = true
-custom_minimum_size = Vector2(120, 160)
-layout_direction = 1
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -784,6 +824,7 @@ offset_left = -280.0
 offset_right = 280.0
 offset_bottom = 168.0
 grow_horizontal = 2
+layout_direction = 1
 
 [node name="playerswapPanel" type="Panel" parent="UI" unique_id=1684372745]
 visible = false
@@ -866,6 +907,7 @@ size_flags_vertical = 3
 text = "START"
 
 [connection signal="pressed" from="CanvasLayer/Victorypanel/Backtomenubutton" to="." method="_on_backtomenubutton_pressed"]
+[connection signal="pressed" from="BacktomenuButton" to="." method="_on_backtomenu_button_pressed"]
 [connection signal="pressed" from="dicerollbutton" to="." method="_on_dicerollbutton_pressed"]
 [connection signal="pressed" from="showpowercardsbutton" to="." method="_on_showpowercardsbutton_pressed"]
 [connection signal="pressed" from="Showshopbutton" to="." method="_on_showshopbutton_pressed"]

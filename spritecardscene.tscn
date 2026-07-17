@@ -26,6 +26,7 @@ scale = Vector2(0.333, 0.333)
 texture = ExtResource("4_ma7af")
 
 [node name="Label" type="Label" parent="." unique_id=544439948]
+custom_maximum_size = Vector2(100, 100)
 layout_mode = 0
 offset_left = 16.0
 offset_top = 152.0
@@ -44,6 +45,7 @@ offset_right = 136.0
 offset_bottom = 16.0
 
 [node name="CostLabel" type="Label" parent="." unique_id=1155501385]
+custom_maximum_size = Vector2(100, 100)
 layout_mode = 0
 offset_right = 48.0
 offset_bottom = 23.0

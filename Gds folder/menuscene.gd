@@ -1,5 +1,5 @@
 extends Control
-
+@onready var profilesbutton: Button = $ProfilesButton
 @onready var Menupanel: Panel = $Panel
 @onready var playbutton: Button = $Playbutton
 @onready var panel2: Control = $Panel2
@@ -15,10 +15,11 @@ extends Control
 @onready var ai3_color_select: OptionButton = $Aisetuppanel/VBoxContaineraibox/Button3
 @onready var ai_level_select: OptionButton = $Aisetuppanel/VBoxContaineraibox/Button4
 @onready var ai_playtest_button: Button = $Aisetuppanel/VBoxContaineraibox/Button5
-
+@onready var Loadbutton : Button = $LoadButton
+@onready var current_profile_label: Label = $CurrentProfileLabel
 # exported / preloads
 var game_scene_packed := preload("res://boardgameplayscene.tscn")
-
+const PROFILE_SCENE := preload("res://Profilescene.tscn")
 # local state
 var selected_mode: String = "" # "ai" or "pass"
 var pending_player_count: int = 0
@@ -50,6 +51,11 @@ func _ready() -> void:
 	_connect_button(vs2button, "_on_vs2_pressed")
 	_connect_button(vs3button, "_on_vs3_pressed")
 	_connect_button(ai_playtest_button, "_on_ai_playtest_pressed")
+	
+	ProfileManager.load_profiles()
+	refresh_current_profile_label()
+	refresh_menu_buttons()
+
 
 # helper
 func _connect_button(btn: Button, method_name: String) -> void:
@@ -65,6 +71,7 @@ func _on_playbutton_pressed() -> void:
 	else:
 		panel2.show()
 
+
 # --- mode selection ---
 func _on_vs_a_ibutton_pressed() -> void:
 	selected_mode = "ai"
@@ -75,7 +82,16 @@ func _on_passandplaybutton_pressed() -> void:
 	selected_mode = "pass"
 	panel2.hide()
 	PlayerCountPanel.show()
+func refresh_menu_buttons():
 
+	var has_profile = ProfileManager.has_selected_profile()
+
+	playbutton.disabled = !has_profile
+
+	if has_profile:
+		Loadbutton.visible = ProfileManager.current_save_exists()
+	else:
+		Loadbutton.visible = false
 # --- player count selection ---
 func _on_vs1_pressed() -> void:
 	_handle_player_count(2)
@@ -268,7 +284,7 @@ func _show_human_color_selection_for_ai_config(config: Dictionary) -> void:
 
 
 # handler for color button inside menu popup
-func _on_menu_color_choice_pressed(popup: PopupPanel, btn: Button, code: String) -> void:
+func _on_menu_color_choice_pressed(popup: PopupPanel, _btn: Button, code: String) -> void:
 	if popup == null:
 		return
 	# store chosen code
@@ -295,45 +311,44 @@ func _on_menu_color_choice_pressed(popup: PopupPanel, btn: Button, code: String)
 
 # When user confirms color selection in menu, start the board scene deferred
 func _on_menu_confirm_color_and_start(popup: PopupPanel, config: Dictionary) -> void:
+	Gamestate.start_new_game()
+
 	if popup == null:
 		return
+
 	var human_code: String = String(popup.get_meta("selected_choice"))
-	if human_code == "" or human_code == null:
+	if human_code == "":
 		var status_lbl: Label = popup.get_meta("status_node") as Label
 		if status_lbl:
 			status_lbl.text = "Please pick a color first"
 		return
 
-	# close popup
 	popup.hide()
 	popup.queue_free()
 
-	# embed the human color into config
 	config["human_color"] = human_code
 
-	# Hide menu UI immediately to avoid any overlap/flicker
-	if panel2: panel2.hide()
-	if PlayerCountPanel: PlayerCountPanel.hide()
-	if AISetupPanel: AISetupPanel.hide()
-	if Menupanel: Menupanel.hide()
+	if panel2:
+		panel2.hide()
+	if PlayerCountPanel:
+		PlayerCountPanel.hide()
+	if AISetupPanel:
+		AISetupPanel.hide()
+	if Menupanel:
+		Menupanel.hide()
 
-	# instantiate board scene and add to root
 	var game_scene: Node = game_scene_packed.instantiate()
 	get_tree().root.add_child(game_scene)
-
-	# make it the current scene (so input/focus goes to it)
 	get_tree().current_scene = game_scene
 
-	# free the menu scene (deferred so current call finishes cleanly)
-	self.call_deferred("queue_free")
+	call_deferred("queue_free")
 
-	# configure the game scene (deferred calls to be safe)
-	game_scene.call_deferred("configure_mode", config["mode"], int(config.get("player_count",2)), config)
+	game_scene.call_deferred("configure_mode", config["mode"], int(config.get("player_count", 2)), config)
 	game_scene.call_deferred("_on_choose_color", human_code)
-
 
 # --- direct start for pass & play ---
 func _start_game(player_count: int) -> void:
+	Gamestate.start_new_game()
 	var config: Dictionary = {
 		"mode": "pass",
 		"player_count": player_count
@@ -357,3 +372,36 @@ func _start_game(player_count: int) -> void:
 
 	# deferred configure call
 	game_scene.call_deferred("configure_mode", config["mode"], int(config.get("player_count",2)), config)
+
+
+func _on_load_button_pressed() -> void:
+	Gamestate.load_game()
+
+	# hide menu
+	if panel2: panel2.hide()
+	if PlayerCountPanel: PlayerCountPanel.hide()
+	if AISetupPanel: AISetupPanel.hide()
+	if Menupanel: Menupanel.hide()
+
+	# instantiate board
+	var game_scene: Node = game_scene_packed.instantiate()
+	get_tree().root.add_child(game_scene)
+	get_tree().current_scene = game_scene
+
+	self.call_deferred("queue_free")
+
+func refresh_current_profile_label() -> void:
+	var profile := ProfileManager.get_current_profile()
+
+	if profile.is_empty():
+		current_profile_label.text = "Current Profile: None"
+	else:
+		current_profile_label.text = "Current Profile: " + str(profile["name"])
+func _on_profiles_button_pressed() -> void:
+	get_tree().change_scene_to_packed(PROFILE_SCENE)
+	
+func refresh_menu():
+
+	playbutton.disabled = !ProfileManager.has_selected_profile()
+
+	Loadbutton.visible = ProfileManager.current_save_exists()

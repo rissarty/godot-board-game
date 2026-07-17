@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://c722jc4oqvvyn"]
+
+[ext_resource type="Script" uid="uid://bsisamabnb05a" path="res://profile_card.gd" id="1_aov73"]
+
+[node name="ProfileCard" type="Button" unique_id=1111125298]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -140.0
+offset_right = 128.0
+offset_bottom = 132.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_aov73")
+
+[node name="SaveLabel" type="Label" parent="." unique_id=779507848]
+layout_mode = 0
+offset_top = 8.0
+offset_right = 256.0
+offset_bottom = 74.0
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="." unique_id=1678719103]
+layout_mode = 0
+offset_top = 194.0
+offset_right = 256.0
+offset_bottom = 264.0
+horizontal_alignment = 1
