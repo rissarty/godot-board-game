@@ -1,0 +1,228 @@
+[gd_scene format=3 uid="uid://dyed2spcr50ad"]
+
+[ext_resource type="Script" path="res://profilemenu.gd" id="1_0joi8"]
+
+[node name="Profilemenu" type="Control" unique_id=1229942748]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0joi8")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1325752186]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 43.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = 211.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="Profile1button" type="Button" parent="HBoxContainer" unique_id=457319373]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/Profile1button" unique_id=815431289]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 21.0
+offset_top = 19.0
+offset_right = -11.0
+offset_bottom = -19.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="NameLabel1" type="RichTextLabel" parent="HBoxContainer/Profile1button/VBoxContainer" unique_id=1251398517]
+layout_mode = 2
+size_flags_vertical = 3
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IDLabel1" type="RichTextLabel" parent="HBoxContainer/Profile1button/VBoxContainer" unique_id=174979978]
+layout_mode = 2
+size_flags_vertical = 3
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SaveLabel1" type="RichTextLabel" parent="HBoxContainer/Profile1button/VBoxContainer" unique_id=2059087952]
+layout_mode = 2
+size_flags_vertical = 3
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Profile2button" type="Button" parent="HBoxContainer" unique_id=1626894776]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/Profile2button" unique_id=1859955482]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 17.0
+offset_top = 19.0
+offset_right = -15.0
+offset_bottom = -19.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="NameLabel2" type="RichTextLabel" parent="HBoxContainer/Profile2button/VBoxContainer" unique_id=1689267373]
+layout_mode = 2
+size_flags_vertical = 3
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IDLabel2" type="RichTextLabel" parent="HBoxContainer/Profile2button/VBoxContainer" unique_id=1641264159]
+layout_mode = 2
+size_flags_vertical = 3
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SaveLabel2" type="RichTextLabel" parent="HBoxContainer/Profile2button/VBoxContainer" unique_id=1415604947]
+layout_mode = 2
+size_flags_vertical = 3
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Profile3button" type="Button" parent="HBoxContainer" unique_id=78699025]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/Profile3button" unique_id=1064157035]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 17.0
+offset_top = 19.0
+offset_right = -15.0
+offset_bottom = -19.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="NameLabel3" type="RichTextLabel" parent="HBoxContainer/Profile3button/VBoxContainer" unique_id=1440713999]
+layout_mode = 2
+size_flags_vertical = 3
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IDLabel3" type="RichTextLabel" parent="HBoxContainer/Profile3button/VBoxContainer" unique_id=321248774]
+layout_mode = 2
+size_flags_vertical = 3
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SaveLabel3" type="RichTextLabel" parent="HBoxContainer/Profile3button/VBoxContainer" unique_id=162454442]
+layout_mode = 2
+size_flags_vertical = 3
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1990243503]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ProfilesContainer" type="VBoxContainer" parent="ScrollContainer" unique_id=507670224]
+z_index = 2
+custom_minimum_size = Vector2(1000, 300)
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 42
+alignment = 1
+
+[node name="Label" type="Label" parent="." unique_id=1649941676]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -158.5
+offset_right = 158.5
+offset_bottom = 32.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 23
+text = "Create a profile"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=2023513962]
+clip_contents = true
+layout_mode = 0
+offset_top = 200.0
+offset_right = 1151.0
+offset_bottom = 652.0
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 40
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1360049250]
+clip_contents = true
+layout_mode = 2
+theme_override_constants/separation = 34
+alignment = 1
+
+[node name="NameInput" type="LineEdit" parent="MarginContainer/VBoxContainer" unique_id=1548057462]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.67
+placeholder_text = "Enter Profile Name"
+alignment = 1
+
+[node name="Createbutton" type="Button" parent="MarginContainer/VBoxContainer" unique_id=384759149]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.62
+text = "CREATE"
+
+[node name="DeleteProfileButton" type="Button" parent="MarginContainer/VBoxContainer" unique_id=578075168]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.62
+text = "DELETE PROFILE"
+
+[node name="Backbutton" type="Button" parent="MarginContainer/VBoxContainer" unique_id=878691394]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.38
+text = "BACK"
+
+[node name="Panel" type="Panel" parent="." unique_id=2091018752]
+visible = false
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 6.0
+offset_right = 1.0
+offset_bottom = 6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[connection signal="pressed" from="MarginContainer/VBoxContainer/Createbutton" to="." method="_on_create_button_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/Backbutton" to="." method="_on_backbutton_pressed"]
