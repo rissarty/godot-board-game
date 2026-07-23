@@ -42,6 +42,13 @@ extends Node2D
 @export var menu_scene_path: String = "res://scenes/menusscene.tscn"  # change to your menu scene path if different
 @export var auto_return_seconds: float = 3.0
 @export var debug_font: Font  # assign a DynamicFont or TTF in the inspector
+@onready var card_action_layer: Control = $UI/CardActionLayer
+@onready var sell_zone: Control = $UI/CardActionLayer/SellZone
+@onready var use_zone: Control = $UI/CardActionLayer/UseZone
+@onready var card_drag_layer: Control = $UI/CardDragLayer
+@onready var game_menu_popup: Panel = $UI/GameMenuPopup
+@onready var desktop_input_button: Button = $UI/GameMenuPopup/MenuContent/DesktopInputButton
+@onready var input_mode_description: Label = $UI/GameMenuPopup/MenuContent/InputModeDescription
 #endregion
 """===========================================MONEY VARS GLOBAL========================================================="""
 #region MONEY VARS GLOBAL
@@ -336,6 +343,13 @@ var occupied_heads: Array[int] = []  # tile_num only (snake/ladder heads)
 var occupied_tails: Array[int] = []  # tile_num only (snake/ladder tails)
 var straight_snake_paths: Array = []
 var straight_ladder_paths: Array = []
+var selected_card: SpriteCardScene = null
+var dragging_card: SpriteCardScene = null
+var drag_preview: Control = null
+var current_touch_position := Vector2.ZERO
+var current_drag_position := Vector2.ZERO
+var card_drag_has_moved := false
+var desktop_card_input_mode := "click" # "click" or "drag"; touch always uses drag.
 #endregion
 
 """===============================================SNAKE CONSTS==============================================================="""
@@ -1737,6 +1751,8 @@ func _ready() -> void:
 	# --------------------------------------------------
 	refresh_money_label()
 	update_hand_turn_state()
+	card_action_layer.visible = false
+	game_menu_popup.visible = false
 func initialize_board() -> void:
 
 	hand_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2418,34 +2434,86 @@ func _finish_initial_setup_and_start() -> void:
 	ensure_money_label()
 	refresh_money_label()
 func _input(event: InputEvent) -> void:
+	if event is InputEventScreenDrag:
+		if is_instance_valid(selected_card) and is_instance_valid(drag_preview):
+			card_drag_has_moved = true
+			drag_preview.global_position = event.position
+			current_touch_position = event.position
+			get_viewport().set_input_as_handled()
+			return
+
+	# A touch can end outside the card that started it. In that case the card
+	# does not receive the release event, so complete the drop from the scene.
+	if event is InputEventScreenTouch and not event.pressed and is_instance_valid(selected_card):
+		_on_card_drag_finished(selected_card, event.position)
+		get_viewport().set_input_as_handled()
+		return
+
+	# The same fallback makes mouse drags reliable when the pointer is released
+	# over a zone instead of over the source card.
+	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT and is_instance_valid(selected_card):
+		_on_card_drag_finished(selected_card, event.position)
+		get_viewport().set_input_as_handled()
+		return
+
+	# ==================================================
+	# EXISTING DEBUG TILE CLICK
+	# ==================================================
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var screen_pos: Vector2 = event.position
 		var world_pos: Vector2 = get_global_mouse_position()
-		
-		# Dictionary nearest tile lookup (unchanged)
+
 		var nearest_tile: int = -1
 		var min_dist: float = INF
+
 		for key in tile_map.keys():
-			var pos: Vector2 = tile_map[key] as Vector2  # Assuming tile_map[key] gives world center
+			var pos: Vector2 = tile_map[key] as Vector2
 			var d: float = pos.distance_to(world_pos)
+
 			if d < min_dist:
 				min_dist = d
 				nearest_tile = int(key)
-		
+
 		var cell_info: String = "no-layer"
+
 		if tilemaplayer != null:
-			# FIXED: Convert world to local, then local_to_map
 			var local_pos: Vector2 = tilemaplayer.to_local(world_pos)
 			var cell: Vector2i = tilemaplayer.local_to_map(local_pos)
+
 			cell_info = "cell: " + str(cell)
-			print("[DEBUG_CLICK] world:", world_pos, " local:", local_pos, " cell:", cell)
-		
+
+			print(
+				"[DEBUG_CLICK] world:",
+				world_pos,
+				" local:",
+				local_pos,
+				" cell:",
+				cell
+			)
+
 		if nearest_tile != -1:
-			print("[DEBUG_CLICK] screen:", screen_pos, " world:", world_pos,
-				  " nearest_tile:", nearest_tile, " tile_pos:", tile_map[nearest_tile],
-				  " dist:", min_dist, " layer_cell:", cell_info)
+			print(
+				"[DEBUG_CLICK] screen:",
+				screen_pos,
+				" world:",
+				world_pos,
+				" nearest_tile:",
+				nearest_tile,
+				" tile_pos:",
+				tile_map[nearest_tile],
+				" dist:",
+				min_dist,
+				" layer_cell:",
+				cell_info
+			)
 		else:
-			print("[DEBUG_CLICK] screen:", screen_pos, " nearest_tile: none", " layer_cell:", cell_info)
+			print(
+				"[DEBUG_CLICK] screen:",
+				screen_pos,
+				" nearest_tile: none",
+				" layer_cell:",
+				cell_info
+			)
 func _check_victory_for_color(color: String) -> bool:
 	# returns true if this color has reached the finish and handled victory UI
 	if player_positions.get(color, 0) >= 100:
@@ -2509,15 +2577,18 @@ func refresh_hand_for_current_player() -> void:
 		var card = card_scene.instantiate()
 		card.set_card_data(card_data)
 		card.card_mode = "hand"
-		
-		# 🔥 PERFECT CENTERED + SPACED! 🔥
+
 		card.position.x = start_x + i * (CARD_WIDTH + GAP)
 		card.position.y = 0
-		
+
 		hand_container.add_child(card)
 		hand_nodes[cp].append(card)
+
 		card.connect("card_clicked", Callable(self, "_on_card_clicked"))
 		card.connect("card_sell_clicked", Callable(self, "_on_card_sell_requested").bind(card))
+		card.connect("card_selected", Callable(self, "_on_card_selected"))
+		card.connect("card_dragged", Callable(self, "_on_card_dragged"))
+		card.connect("card_drag_finished", Callable(self, "_on_card_drag_finished"))
 
 	hand_container.custom_minimum_size = Vector2(total_width, 170)
 	hand_container.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Cards handle input!
@@ -2525,7 +2596,26 @@ func refresh_hand_for_current_player() -> void:
 	update_hand_turn_state()
 	refresh_money_label()
 	is_refreshing_hand = false
+func _process(_delta: float) -> void:
+	if not is_instance_valid(drag_preview):
+		return
 
+	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		drag_preview.global_position = get_global_mouse_position()
+	elif current_touch_position != Vector2.ZERO:
+		drag_preview.global_position = current_touch_position
+func _on_card_dragged(
+	card: SpriteCardScene,
+	position: Vector2
+) -> void:
+	if card != selected_card:
+		return
+	card_drag_has_moved = true
+	current_drag_position = position
+
+	if is_instance_valid(drag_preview):
+
+		drag_preview.global_position = position
 # Handle card played signal
 func _on_card_clicked(card_data):
 	# Handle what happens when the card is clicked:
@@ -2536,7 +2626,59 @@ func _on_card_clicked(card_data):
 		start_swap_selection(get_current_player())
 	else:
 		apply_card_effect_by_name(get_current_player(), card_data)
+func _on_card_selected(card: SpriteCardScene) -> void:
+	if card.card_mode not in ["hand", "permanent"]:
+		return
 
+	if is_instance_valid(drag_preview):
+		drag_preview.queue_free()
+
+	selected_card = card
+	card_drag_has_moved = false
+	current_touch_position = card.global_position
+
+	show_card_action_zones(card.card_mode == "hand")
+
+	drag_preview = card_scene.instantiate()
+	drag_preview.card_mode = card.card_mode
+	drag_preview.set_card_data(card.card_data)
+
+	drag_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	drag_preview.modulate = Color(1, 1, 1, 0.85)
+
+	card_drag_layer.add_child(drag_preview)
+	card_drag_layer.visible = true
+	drag_preview.global_position = card.global_position
+func _on_card_drag_finished(
+	card: SpriteCardScene,
+	drop_position: Vector2
+) -> void:
+	# Ignore releases from a card that is no longer the active drag. This also
+	# prevents the card and scene-level touch handlers from completing a drop twice.
+	if card != selected_card:
+		return
+	# A tap only selects a touch card. It must actually move before a release
+	# can use or sell it, which gives touch controls a reliable drag buffer.
+	if not card_drag_has_moved:
+		if is_instance_valid(drag_preview):
+			drag_preview.queue_free()
+		drag_preview = null
+		hide_card_action_zones()
+		return
+
+	if sell_zone.get_global_rect().has_point(drop_position):
+		sell_card(card.card_data, card)
+	elif card.card_mode == "hand" and use_zone.visible and use_zone.get_global_rect().has_point(drop_position):
+		_on_card_clicked(card.card_data)
+
+	if is_instance_valid(drag_preview):
+		drag_preview.queue_free()
+
+	drag_preview = null
+
+	hide_card_action_zones()
+func _on_card_sell_requested(card_data: Dictionary, card: SpriteCardScene) -> void:
+	sell_card(card_data, card)
 # Remove a single matching card by unique identifier (recommend adding 'id' to cards)
 func _remove_card_from_player_hand(player_color: String, card_data: Dictionary) -> void:
 	if not player_hands.has(player_color):
@@ -2799,6 +2941,12 @@ func _ai_roll_and_move(color: String) -> void:
 		await get_tree().create_timer(0.25).timeout
 	player_positions[color] = target_tile
 
+	if resolve_snake_or_ladder_landing(color):
+		check_for_money_collection(color)
+		ai_turn_in_progress = false
+		end_turn()
+		return
+
 	# Snakes and Ladders (CHANGED: snakes → snake_map, ladders → ladder_map)
 	if snake_map.has(target_tile):
 		await get_tree().create_timer(0.45).timeout
@@ -2973,6 +3121,13 @@ func sell_card(card_data: Dictionary, card_node: Node) -> void:
 			var pd: Dictionary = player_permanent_cards[cp][j]
 			if String(pd.get("name","")) == String(card_data.get("name","")):
 				player_permanent_cards[cp].remove_at(j)
+				# Keep the visual permanent list and the effect list in sync.
+				if player_permanents.has(cp):
+					for k in range(player_permanents[cp].size()):
+						var effect_card: Dictionary = player_permanents[cp][k]
+						if String(effect_card.get("name", "")) == String(card_data.get("name", "")):
+							player_permanents[cp].remove_at(k)
+							break
 				removed = true
 				break
 
@@ -3032,8 +3187,7 @@ func _on_shop_card_bought(card_data: Dictionary, shop_card_node: Node) -> void:
 	if not try_spend_money(current_player, cost):  # ✅ Uses Bank Card!
 		print("💸 Not enough funds"); return
 
-	# Apply transaction
-	player_money[current_player] -= cost
+	# try_spend_money() already verified and deducted the cost.
 	var purchased_card := card_data.duplicate(true)
 	purchased_card["owner_color"] = current_player
 	player_hands[current_player].append(purchased_card)
@@ -3085,7 +3239,6 @@ func populate_permanent_shop(for_player_id: String) -> void:
 
 	update_game_state()
 
-
 func refresh_permanent_panel_for_current_player() -> void:
 	var cp := get_current_player_color()
 	if cp == "":
@@ -3095,19 +3248,39 @@ func refresh_permanent_panel_for_current_player() -> void:
 		player_permanent_cards[cp] = []
 
 	if not is_instance_valid(permcontainer):
-		print("⚠️ permcontainer not found — please confirm scene node path.")
+		print("⚠️ permcontainer not found.")
 		return
-	var panel = permcontainer
 
-	clear_children(panel)
+	clear_children(permcontainer)
 
 	var card_scene = preload("res://spritecardscene.tscn")
+
 	for card_data in player_permanent_cards[cp]:
 		var card = card_scene.instantiate()
+
 		card.set_card_data(card_data)
-		card.card_mode = "permanent"         # <- required
-		print_debug("PERM card mode:", card.card_mode, "name:", card_data.get("name",""))
-		panel.add_child(card)
+		card.card_mode = "permanent"
+
+		permcontainer.add_child(card)
+
+		card.connect(
+			"card_selected",
+			Callable(self, "_on_card_selected")
+		)
+		card.connect(
+			"card_dragged",
+			Callable(self, "_on_card_dragged")
+		)
+
+		card.connect(
+			"card_drag_finished",
+			Callable(self, "_on_card_drag_finished")
+		)
+
+		card.connect(
+			"card_sell_clicked",
+			Callable(self, "_on_card_sell_requested").bind(card)
+		)
 
 func _on_permanent_card_bought(card_data: Dictionary, shop_card_node: Node) -> void:
 	var current_player := get_current_player_color()
@@ -3352,8 +3525,7 @@ func try_spend_money(color: String, amount: int) -> bool:
 	if total_spending_power < amount:  # $15 < $8? No
 		_perm_log("%s cannot spend $%d (only $%d available)" % [color, amount, total_spending_power])
 		return false
-	print("Cash: $%d | Bank Cards: %d | Debt: $%d" % [player_money["G"], count_permanent_copies("G", "Bank Card"), get_max_debt("G")])
-	# Spend normally
+	# Spend once after the affordability/debt-limit check succeeds.
 	player_money[color] -= amount
 	refresh_money_label()
 	
@@ -3388,12 +3560,35 @@ func apply_card_effect(move_value: int) -> void:
 	player_positions[current_color] = clamp(player_positions[current_color], 1, 100)
 	if player_nodes.has(current_color) and tile_map.has(player_positions[current_color]):
 		player_nodes[current_color].position = tile_map[player_positions[current_color]] + get_offset_if_needed(player_positions[current_color], current_color)
+	resolve_snake_or_ladder_landing(current_color)
 	check_for_money_collection(current_color)
 	update_game_state()
 	if _check_victory_for_color(current_color):
 		return
 	if game_over:
 		return
+
+func resolve_snake_or_ladder_landing(color: String) -> bool:
+	if not player_positions.has(color):
+		return false
+
+	var landed_tile := int(player_positions[color])
+	var destination := -1
+	var label := ""
+	if snake_map.has(landed_tile):
+		destination = int(snake_map[landed_tile])
+		label = "SNAKE"
+	elif ladder_map.has(landed_tile):
+		destination = int(ladder_map[landed_tile])
+		label = "LADDER"
+
+	if destination < 1:
+		return false
+
+	player_positions[color] = destination
+	move_player_to_tile(color, destination)
+	_perm_log("%s hit a %s %d -> %d" % [color, label, landed_tile, destination])
+	return true
 func apply_tramp_effect(color: String) -> void:
 	# Only trigger if player has Tramp permanent
 	if not has_permanent(color, "Tramp"):
@@ -3527,6 +3722,13 @@ func _on_dicerollbutton_pressed() -> void:
 
 	# --- Win Check ---
 	if _check_victory_for_color(current_color):
+		return
+
+	# Use the shared landing resolver so this path behaves exactly like
+	# power-card movement and saved/pass-and-play games.
+	if resolve_snake_or_ladder_landing(current_color):
+		check_for_money_collection(current_color)
+		end_turn()
 		return
 
 # --- Snakes & Ladders (NEW: use generated maps) ---
@@ -3688,6 +3890,44 @@ func _on_showshopbutton_pressed() -> void:
 
 func _on_permanentcardstogglebutton_pressed() -> void:
 	permpanel.visible = !permpanel.visible
+
+func is_desktop_drag_mode() -> bool:
+	return desktop_card_input_mode == "drag"
+
+func _is_mobile_platform() -> bool:
+	# Android/iOS report "mobile". Touchscreen availability also covers mobile
+	# web builds, which may identify themselves as web instead.
+	return OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+
+func _update_desktop_input_mode_ui() -> void:
+	if _is_mobile_platform():
+		desktop_input_button.visible = false
+		input_mode_description.text = "Touch controls use drag-to-use and drag-to-sell."
+		return
+
+	desktop_input_button.visible = true
+	if is_desktop_drag_mode():
+		desktop_input_button.text = "Desktop card controls: Drag mode"
+		input_mode_description.text = "Drag a card into USE CARD or SELL CARD."
+	else:
+		desktop_input_button.text = "Desktop card controls: Click mode"
+		input_mode_description.text = "Left-click a power card to use it. Right-click an owned card to show its Sell button."
+
+func _on_backtomenu_button_pressed() -> void:
+	hide_card_action_zones()
+	_update_desktop_input_mode_ui()
+	game_menu_popup.visible = true
+
+func _on_desktop_input_button_pressed() -> void:
+	desktop_card_input_mode = "drag" if desktop_card_input_mode == "click" else "click"
+	_update_desktop_input_mode_ui()
+
+func _on_close_game_menu_pressed() -> void:
+	game_menu_popup.visible = false
+
+func _on_return_to_menu_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/menuscene.tscn")
+
 func _on_backtomenubutton_pressed():
 	print("Back to Menu pressed - attempting scene change")
 	
@@ -3714,8 +3954,19 @@ func _on_backtomenubutton_pressed():
 				if file.ends_with(".tscn"):
 					print("  - ", file)
 				file = dir.get_next()
-
-
+func show_card_action_zones(can_use_card: bool = true) -> void:
+	card_action_layer.visible = true
+	sell_zone.visible = true
+	use_zone.visible = can_use_card
+func hide_card_action_zones() -> void:
+	card_action_layer.visible = false
+	sell_zone.visible = false
+	use_zone.visible = false
+	card_drag_layer.visible = false
+	selected_card = null
+	dragging_card = null
+	card_drag_has_moved = false
+	current_touch_position = Vector2.ZERO
 func _on_shared_toggled(rows_container: Node, pressed: bool) -> void:
 	# toggle visibility of per-row level selectors
 	var idx := 0
@@ -4062,7 +4313,3 @@ func _debug_print_ai_state(tag: String = "") -> void:
 	print("current_turn_index:", current_turn_index)
 	print("==============================")
 #endregion
-
-
-func _on_backtomenu_button_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/menuscene.tscn")
