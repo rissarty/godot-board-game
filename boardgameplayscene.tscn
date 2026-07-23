@@ -539,6 +539,12 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 corner_detail = 5
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6nsor"]
+bg_color = Color(0.29293573, 0.6988954, 0.36517352, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cwk3g"]
+bg_color = Color(0.73402214, 0.5746217, 0.20458525, 1)
+
 [node name="Boardgameplayscene" type="Node2D" unique_id=881869912]
 script = ExtResource("1_argfh")
 metadata/_edit_horizontal_guides_ = [0.0, 184.0]
@@ -714,6 +720,7 @@ offset_bottom = 64.0
 autowrap_mode = 3
 
 [node name="Label" type="Label" parent="." unique_id=1421891577]
+visible = false
 offset_left = 8.0
 offset_top = 386.0
 offset_right = 296.0
@@ -906,9 +913,156 @@ layout_mode = 2
 size_flags_vertical = 3
 text = "START"
 
+[node name="CardActionLayer" type="Control" parent="UI" unique_id=1714006323]
+visible = false
+z_index = 10
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="UseZone" type="Control" parent="UI/CardActionLayer" unique_id=1732289635]
+visible = false
+anchors_preset = 0
+offset_left = 184.0
+offset_top = 456.0
+offset_right = 320.0
+offset_bottom = 640.0
+mouse_filter = 2
+
+[node name="Panel" type="Panel" parent="UI/CardActionLayer/UseZone" unique_id=2146788546]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_6nsor")
+
+[node name="Label" type="Label" parent="UI/CardActionLayer/UseZone/Panel" unique_id=1515684884]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -11.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "USE CARD"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="SellZone" type="Control" parent="UI/CardActionLayer" unique_id=82285363]
+visible = false
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 456.0
+offset_right = 160.0
+offset_bottom = 640.0
+mouse_filter = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Panel" type="Panel" parent="UI/CardActionLayer/SellZone" unique_id=945777203]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_cwk3g")
+
+[node name="Label" type="Label" parent="UI/CardActionLayer/SellZone/Panel" unique_id=280894536]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -11.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "SELL CARD"
+horizontal_alignment = 1
+
+[node name="CardDragLayer" type="Control" parent="UI" unique_id=1472116285]
+visible = false
+z_index = 11
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="GameMenuPopup" type="Panel" parent="UI" unique_id=188216330]
+visible = false
+z_index = 200
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -140.0
+offset_right = 210.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuContent" type="VBoxContainer" parent="UI/GameMenuPopup" unique_id=1722044898]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="UI/GameMenuPopup/MenuContent" unique_id=1083459400]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Game Menu"
+horizontal_alignment = 1
+
+[node name="InputModeDescription" type="Label" parent="UI/GameMenuPopup/MenuContent" unique_id=1121719788]
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="DesktopInputButton" type="Button" parent="UI/GameMenuPopup/MenuContent" unique_id=316728029]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Desktop card controls"
+
+[node name="ReturnToMenuButton" type="Button" parent="UI/GameMenuPopup/MenuContent" unique_id=2032448081]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Return to Menu"
+
+[node name="CloseButton" type="Button" parent="UI/GameMenuPopup/MenuContent" unique_id=2100642655]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Close"
+
 [connection signal="pressed" from="CanvasLayer/Victorypanel/Backtomenubutton" to="." method="_on_backtomenubutton_pressed"]
 [connection signal="pressed" from="BacktomenuButton" to="." method="_on_backtomenu_button_pressed"]
 [connection signal="pressed" from="dicerollbutton" to="." method="_on_dicerollbutton_pressed"]
 [connection signal="pressed" from="showpowercardsbutton" to="." method="_on_showpowercardsbutton_pressed"]
 [connection signal="pressed" from="Showshopbutton" to="." method="_on_showshopbutton_pressed"]
 [connection signal="pressed" from="permanentcardstogglebutton" to="." method="_on_permanentcardstogglebutton_pressed"]
+[connection signal="pressed" from="UI/GameMenuPopup/MenuContent/DesktopInputButton" to="." method="_on_desktop_input_button_pressed"]
+[connection signal="pressed" from="UI/GameMenuPopup/MenuContent/ReturnToMenuButton" to="." method="_on_return_to_menu_pressed"]
+[connection signal="pressed" from="UI/GameMenuPopup/MenuContent/CloseButton" to="." method="_on_close_game_menu_pressed"]
